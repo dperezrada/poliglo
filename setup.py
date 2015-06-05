@@ -20,7 +20,8 @@ setup(name='poliglo-server',
       install_requires=[
             'flask',
             'flask-cors',
-            'poliglo'
+            'poliglo',
+            'tornado'
       ],
       tests_require=['nose'],
       test_suite="tests",
