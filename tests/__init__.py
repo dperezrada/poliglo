@@ -1,8 +1,8 @@
 import os, errno
-import master_mind
 import unittest
 import tempfile
 
+import poliglo_server
 import poliglo
 from poliglo.utils import to_json, json_loads
 
@@ -22,7 +22,7 @@ SCRIPTS = [
     {
         "id": "script_1",
         "name": "Script 1",
-        "start_worker": "filter_1",
+        "start_worker_id": "filter_1",
         "workers": [
             {
                 "id": "filter_1",
@@ -44,7 +44,7 @@ SCRIPTS = [
     {
         "id": "script_2",
         "name": "Script 2",
-        "start_worker": "filter_1",
+        "start_worker_id    ": "filter_1",
         "workers": [
             {
                 "id": "filter_1",
@@ -115,13 +115,13 @@ class TestPoligloServer(unittest.TestCase):
                 to_json(script)
             )
 
-        master_mind.CONFIG = master_mind.load_config(cls.config_path)
-        master_mind.DEBUG = True
+        poliglo_server.CONFIG = poliglo_server.load_config(cls.config_path)
+        poliglo_server.DEBUG = True
 
-        master_mind.SCRIPTS = master_mind.load_scripts(
+        poliglo_server.SCRIPTS = poliglo_server.load_scripts(
             cls.scripts_path
         )
-        cls.app = master_mind.app.test_client()
+        cls.app = poliglo_server.app.test_client()
 
     def setUp(self):
         self.connection = poliglo.get_connection(CONFIG.get('all'))
@@ -156,8 +156,16 @@ class TestPoligloServer(unittest.TestCase):
         )
 
         self.assertEqual(
-            SCRIPTS[1]['workers'][0],
-            worker_type_scripts['script_2']['filter_1']
+            SCRIPTS[1]['workers'][0]['default_inputs'],
+            worker_type_scripts['script_2']['filter_1']['default_inputs']
+        )
+
+    def test_get_worker_type_script_set_outputs_type(self):
+        response = self.app.get('/worker_types/filter/scripts')
+        worker_type_scripts = json_loads(response.data)
+        self.assertEqual(
+            ['write'],
+            worker_type_scripts['script_1']['filter_1'].get('__outputs_types')
         )
 
     def test_get_all_scripts(self):
@@ -189,20 +197,33 @@ class TestPoligloServer(unittest.TestCase):
         self.assertEqual(0, len(processes))
 
     def test_script_get_process_one_exists(self):
-        poliglo.start_process(self.connection, 'script_1', 'filter_1', 'Script 1 - 1', {})
-        response = self.app.get('/scripts/script_1/processes')
+        url = '/scripts/script_1/processes'
+        self.app.post(
+            url, data=to_json({'name': 'Script 1 - 1'}),
+            headers={'content-type':'application/json'}
+        )
+
+        response = self.app.get(url)
         processes = json_loads(response.data)
         self.assertEqual(1, len(processes))
         self.assertEqual('Script 1 - 1', processes[0].get('name'))
 
     def test_get_one_process(self):
-        process_id = poliglo.start_process(self.connection, 'script_1', 'filter_1', 'Script 1 - 1', {})
+        response = self.app.post(
+            '/scripts/script_1/processes', data=to_json({'name': 'Script 1 - 1'}),
+            headers={'content-type':'application/json'}
+        )
+        process_id = json_loads(response.data).get('id')
         response = self.app.get('/processes/'+process_id)
         process = json_loads(response.data)
         self.assertEqual('Script 1 - 1', process.get('name'))
 
     def test_get_process_status_running(self):
-        process_id = poliglo.start_process(self.connection, 'script_1', 'filter_1', 'Script 1 - 1', {})
+        response = self.app.post(
+            '/scripts/script_1/processes', data=to_json({'name': 'Script 1 - 1'}),
+            headers={'content-type':'application/json'}
+        )
+        process_id = json_loads(response.data).get('id')
         response = self.app.get('/processes/'+process_id+'/status')
         process = json_loads(response.data)
         self.assertEqual('running', process.get('status'))

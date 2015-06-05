@@ -1,0 +1,10 @@
+language: python
+python:
+  - "2.7"
+install:
+  - python setup.py install
+  - pip install coveralls
+script:
+  - coverage run --source=poliglo_server setup.py test
+after_success:
+  - coveralls

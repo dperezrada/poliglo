@@ -26,7 +26,7 @@ Example file:
         "REDIS_HOST": "127.0.0.1",
         "REDIS_PORT": 6379,
         "REDIS_DB": 0,
-        "MASTER_MIND_URL": "http://localhost:9015"
+        "POLIGLO_SERVER_URL": "http://localhost:9015"
     },
     "upload_file_s3": {
         "S3_ACCESS_KEY": "XXXX",

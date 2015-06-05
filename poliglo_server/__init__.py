@@ -9,8 +9,10 @@ from datetime import datetime
 
 from flask import Flask, request, abort, jsonify, Response
 from flask.ext.cors import CORS
-from poliglo import get_connection, add_data_to_next_worker
-from poliglo import REDIS_KEY_INSTANCE_WORKER_DISCARDED, REDIS_KEY_INSTANCE_WORKER_JOBS, REDIS_KEY_INSTANCE_WORKER_ERRORS
+from poliglo import get_connection, add_data_to_next_worker, start_process
+from poliglo import REDIS_KEY_INSTANCE_WORKER_FINALIZED_JOBS, REDIS_KEY_INSTANCE_WORKER_DISCARDED, REDIS_KEY_INSTANCE_WORKER_JOBS, REDIS_KEY_INSTANCE_WORKER_ERRORS
+from poliglo.utils import to_json, json_loads
+
 from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
@@ -18,6 +20,8 @@ from tornado.ioloop import IOLoop
 
 app = Flask(__name__)
 cors = CORS(app)
+
+WORKERS_TYPES = {}
 
 def load_config(path):
     if path and os.path.exists(path):
@@ -31,7 +35,10 @@ def load_scripts(path):
             for filename in fnmatch.filter(filenames, 'script_*'):
                 script = json.load(open(os.path.join(root, filename)))
                 scripts.append(script)
+                for worker in script.get('workers', []):
+                    WORKERS_TYPES[worker.get('id')] = worker.get('worker_type')
     return scripts
+
 
 CONFIG = load_config(os.environ.get('CONFIG_PATH'))
 SCRIPTS = load_scripts(os.environ.get('SCRIPTS_PATH'))
@@ -100,6 +107,9 @@ def get_worker_plan(worker_type):
         for worker in workers:
             if not return_data.get(script.get('id')):
                 return_data[script.get('id')] = {}
+            worker['__outputs_types'] = [
+                WORKERS_TYPES.get(output_worker_id) for output_worker_id in worker.get('outputs', [])
+            ]
             return_data[script.get('id')][worker.get('id')] = worker
     return jsonify(return_data)
 
@@ -111,7 +121,7 @@ def get_all_scripts():
         scripts.append({
             'type': script.get('id'),
             'name': script.get('name'),
-            'start_worker': script.get('start_worker'),
+            'start_worker_id': script.get('start_worker_id'),
             'group': script.get('group') or 'No group'
         })
     if request.args.get('by_group') is not None:
@@ -135,6 +145,24 @@ def get_script_processes(script_id):
     processes = redis_con.zrange('scripts:%s:processes' % script_id, -25, -1)
     return_data = [json.loads(process) for process in processes]
     return Response(json.dumps(return_data), mimetype='application/json')
+
+@app.route('/scripts/<script_id>/processes', methods=['POST'])
+def create_script_process(script_id):
+    redis_con = get_connection(CONFIG.get('all'))
+    script = _get_script(script_id)
+    data = request.get_json()
+    start_worker_id = script.get('start_worker_id')
+    worker_type = ([
+        worker.get('worker_type') for worker in script.get('workers')
+        if worker.get('id') == start_worker_id
+    ] or [None])[0]
+    if worker_type:
+        process_id = start_process(
+            redis_con, script_id, worker_type, script.get('start_worker_id'),
+            data.get('name'), data.get('data', {})
+        )
+        return Response(json.dumps({'id': process_id}), status=201)
+    return Response(status=404)
 
 @app.route('/processes/<process_id>', methods=['GET'])
 def get_process(process_id):
@@ -208,6 +236,8 @@ def get_process_worker_jobs_type(process_id, worker_id, option):
 def action_over_worker_job_type(process_id, worker_id, redis_score, option):
     connection = get_connection(CONFIG.get('all'))
     process_data = _get_process(connection, process_id)
+    script_id = process_data.get('type')
+    script = _get_script(script_id)
     redis_key = "scripts:%s:processes:%s:workers:%s:errors" % (
         process_data.get('type'), process_id, worker_id
     )
@@ -215,7 +245,11 @@ def action_over_worker_job_type(process_id, worker_id, redis_score, option):
     if len(errors_list) > 0:
         raw_data = errors_list[0]
         if option == 'retry':
-            add_data_to_next_worker(connection, worker_id, raw_data)
+            worker_type = [
+                worker.get('worker_type') for worker in script.get('workers')
+                if worker.get('id') == worker_id
+            ]
+            add_data_to_next_worker(connection, worker_type[0], raw_data)
         else:
             # discard
             connection.zadd(
@@ -267,8 +301,26 @@ def get_process_stats(process_id):
         workers_stats[worker]['pending'] = int(values.get('total', 0)) - int(values.get('done', 0)) - int(values.get('errors', 0)) - int(values.get('discarded', 0))
     return jsonify({'workers': workers_stats})
 
-if __name__ == '__main__':
-  http_server = HTTPServer(WSGIContainer(app))
-  http_server.listen(9015)
-  IOLoop.instance().start()
 
+@app.route('/processes/<process_id>/outputs', methods=['GET'])
+def get_process_outputs(process_id):
+    connection = get_connection(CONFIG.get('all'))
+    process_data = _get_process(connection, process_id)
+    script_id = process_data.get('type')
+    script = _get_script(script_id)
+    worker_id = script.get('workers')[-1]['id']
+    target_key = REDIS_KEY_INSTANCE_WORKER_FINALIZED_JOBS % (script_id, process_id, worker_id)
+    return to_json([
+        json_loads(data).get('workers_output', {}).get(worker_id) for data in connection.zrange(target_key, 0, -1)
+    ])
+
+
+def start_server():
+    port = int(os.environ.get('POLIGLO_SERVER_PORT') or 9015)
+    http_server = HTTPServer(WSGIContainer(app))
+    http_server.listen(port)
+    IOLoop.instance().start()
+
+if __name__ == '__main__':
+    app.DEBUG = True
+    start_server()
