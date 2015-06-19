@@ -1,0 +1,15 @@
+<h1>{{script.name}}</h1>
+<table class="table">
+    <thead>
+        <th>Date</th>
+        <th>Instance name</th>
+        <th>Status</th>
+    </thead>
+    <tbody>
+        <tr ng-repeat="process in processes">
+            <td>{{process.start_time_formatted}}</td>
+            <td><a ui-sref="process.show({processId: process.id})">{{process.name}}</a></td>
+            <td>{{processStatus[process.id]}}</td>
+        </tr>
+    </tbody>
+</table>

@@ -1,0 +1,17 @@
+<ol class="breadcrumb">
+    <li><a ui-sref="process.show({processId: process.id})">{{process.name}}</a></li>
+    <li>{{workerId}} finalized</li>
+</ol>
+<h1>Finalized - {{process.name}} - {{workerId}}</h1>
+<div ng-repeat="data in finalized">
+    <h3>Data {{$index+1}}</h3>
+
+    <ul class="nav nav-tabs">
+      <li role="presentation" ng-class="{'active': !show_full}"><a href="" ng-click="show_full=false">Worker output</a></li>
+      <li role="presentation" ng-class="{'active': show_full}"><a href="" ng-click="show_full=true">Full json</a></li>
+    </ul>
+    <div class="tab-content">
+        <div role="tabpanel" class="tab-pane" ng-class="{'active': !show_full}"><pre style="height: 300px;overflow: auto;word-wrap: normal;white-space: pre;">{{tidyJSON(data.workers_output[workerId])}}</pre></div>
+        <div role="tabpanel" class="tab-pane" ng-class="{'active': show_full}" ><pre style="height: 300px;overflow: auto;word-wrap: normal;white-space: pre;">{{tidyJSON(data)}}</pre></div>
+    </div>
+</div>
