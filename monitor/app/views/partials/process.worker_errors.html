@@ -1,0 +1,19 @@
+<ol class="breadcrumb">
+    <li><a ui-sref="process.show({processId: process.id})">{{process.name}}</a></li>
+    <li>{{workerId}} errors</li>
+</ol>
+<h1>Errors - {{process.name}} - {{workerId}}</h1>
+<div style="margin-bottom: 7px"><button class="btn btn-primary btn" ng-click="retryAllErrors()">Retry all</button></div>
+<div ng-repeat="error in errors">
+    <h3>Error: {{error.workers_error[workerId].error}}</h3>
+    <div style="margin-bottom: 7px"><button class="btn btn-primary btn-xs" ng-click="retryError($index)">Retry</button> <button class="btn btn-danger btn-xs" ng-click="discardError($index)">Discard</button></div>
+    <ul class="nav nav-tabs">
+      <li role="presentation" ng-class="{'active': !show_data}"><a href="" ng-click="show_data=false">Error</a></li>
+      <li role="presentation" ng-class="{'active': show_data}"><a href="" ng-click="show_data=true">Data (json)</a></li>
+    </ul>
+    <div class="tab-content">
+
+        <div role="tabpanel" class="tab-pane" ng-class="{'active': !show_data}"><pre>{{error.workers_error[workerId].traceback}}</pre></div>
+        <div role="tabpanel" class="tab-pane" ng-class="{'active': show_data}" ><pre>{{error}}</pre></div>
+    </div>
+</div>

@@ -30,7 +30,7 @@ SCRIPTS = [
                 "default_inputs": {
                     "include": ["price", ">=", 100]
                 },
-                "outputs": ["write_1"]
+                "next_workers": ["write_1"]
             },
             {
                 "id": "write_1",
@@ -52,7 +52,7 @@ SCRIPTS = [
                 "default_inputs": {
                     "include": ["price", ">=", 100]
                 },
-                "outputs": ["add_one_1"]
+                "next_workers": ["add_one_1"]
             },
             {
                 "id": "add_one_1",
@@ -60,7 +60,7 @@ SCRIPTS = [
                 "default_inputs": {
                     "target_fields": ["price"]
                 },
-                "outputs": ["filter_2"]
+                "next_workers": ["filter_2"]
             },
             {
                 "id": "filter_2",
@@ -68,7 +68,7 @@ SCRIPTS = [
                 "default_inputs": {
                     "include": ["price", ">=", 101]
                 },
-                "outputs": ["send_to_s3_1"]
+                "next_workers": ["send_to_s3_1"]
             },
             {
                 "id": "send_to_s3_1",
@@ -165,7 +165,7 @@ class TestPoligloServer(unittest.TestCase):
         worker_type_scripts = json_loads(response.data)
         self.assertEqual(
             ['write'],
-            worker_type_scripts['script_1']['filter_1'].get('__outputs_types')
+            worker_type_scripts['script_1']['filter_1'].get('__next_workers_types')
         )
 
     def test_get_all_scripts(self):

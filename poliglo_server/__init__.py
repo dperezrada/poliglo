@@ -32,7 +32,7 @@ def load_scripts(path):
     scripts = []
     if path and os.path.exists(path):
         for root, _, filenames in os.walk(path):
-            for filename in fnmatch.filter(filenames, 'script_*'):
+            for filename in fnmatch.filter(filenames, '*.json'):
                 script = json.load(open(os.path.join(root, filename)))
                 scripts.append(script)
                 for worker in script.get('workers', []):
@@ -107,8 +107,8 @@ def get_worker_plan(worker_type):
         for worker in workers:
             if not return_data.get(script.get('id')):
                 return_data[script.get('id')] = {}
-            worker['__outputs_types'] = [
-                WORKERS_TYPES.get(output_worker_id) for output_worker_id in worker.get('outputs', [])
+            worker['__next_workers_types'] = [
+                WORKERS_TYPES.get(output_worker_id) for output_worker_id in worker.get('next_workers', [])
             ]
             return_data[script.get('id')][worker.get('id')] = worker
     return jsonify(return_data)
@@ -232,8 +232,8 @@ def get_process_worker_jobs_type(process_id, worker_id, option):
         json.dumps(jobs), mimetype='application/json'
     )
 
-@app.route('/processes/<process_id>/workers/<worker_id>/errors/<redis_score>/<option>', methods=['GET'])
-def action_over_worker_job_type(process_id, worker_id, redis_score, option):
+@app.route('/processes/<process_id>/workers/<worker_id>/errors/<option>/<redis_score>', methods=['GET'])
+def action_over_worker_job_type(process_id, worker_id, option, redis_score):
     connection = get_connection(CONFIG.get('all'))
     process_data = _get_process(connection, process_id)
     script_id = process_data.get('type')
@@ -241,23 +241,26 @@ def action_over_worker_job_type(process_id, worker_id, redis_score, option):
     redis_key = "scripts:%s:processes:%s:workers:%s:errors" % (
         process_data.get('type'), process_id, worker_id
     )
-    errors_list = connection.zrangebyscore(redis_key, redis_score, redis_score)
+    if redis_score == 'all':
+        errors_list = connection.zrange(redis_key, 0, -1, withscores=True)
+    else:
+        errors_list = connection.zrangebyscore(redis_key, redis_score, redis_score, withscores=True)
     if len(errors_list) > 0:
-        raw_data = errors_list[0]
-        if option == 'retry':
-            worker_type = [
-                worker.get('worker_type') for worker in script.get('workers')
-                if worker.get('id') == worker_id
-            ]
-            add_data_to_next_worker(connection, worker_type[0], raw_data)
-        else:
-            # discard
-            connection.zadd(
-                REDIS_KEY_INSTANCE_WORKER_DISCARDED % (process_data.get('type'), process_id, worker_id),
-                time.time(),
-                raw_data
-            )
-        connection.zremrangebyscore(redis_key, redis_score, redis_score)
+        for raw_data, redis_score in errors_list:
+            if option == 'retry':
+                worker_type = [
+                    worker.get('worker_type') for worker in script.get('workers')
+                    if worker.get('id') == worker_id
+                ]
+                add_data_to_next_worker(connection, worker_type[0], raw_data)
+            else:
+                # discard
+                connection.zadd(
+                    REDIS_KEY_INSTANCE_WORKER_DISCARDED % (process_data.get('type'), process_id, worker_id),
+                    time.time(),
+                    raw_data
+                )
+            connection.zremrangebyscore(redis_key, redis_score, redis_score)
     else:
         abort(404, "No such error id: %s" % redis_score)
     return jsonify({})
