@@ -13,6 +13,9 @@ angular.module('poligloMonitorApp')
             $scope.scriptGroups = data;
         });
     })
+    .controller('ScriptsNewCtrl', function ($scope, Process, Script) {
+
+    })
     .controller('ProcessesListCtrl', function ($scope, $stateParams, $interval, Process, Script) {
             $scope.processStatus = {};
             Script.get($stateParams.scriptType, function(data){

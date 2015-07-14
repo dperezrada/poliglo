@@ -25,6 +25,11 @@ angular
           templateUrl: 'views/partials/scripts.list.html',
           controller: 'ScriptsListCtrl'
         })
+        .state('scripts.new', {
+          url: '/scripts/new',
+          templateUrl: 'views/partials/scripts.new.html',
+          controller: 'ProcessesNewCtrl'
+        })
         .state('scripts.list_processes', {
           url: '/scripts/:scriptType/processes',
           templateUrl: 'views/partials/scripts.list_processes.html',
