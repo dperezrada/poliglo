@@ -32,7 +32,7 @@ def load_scripts(path):
     scripts = []
     if path and os.path.exists(path):
         for root, _, filenames in os.walk(path):
-            for filename in fnmatch.filter(filenames, 'script_*'):
+            for filename in fnmatch.filter(filenames, '*.json'):
                 script = json.load(open(os.path.join(root, filename)))
                 scripts.append(script)
                 for worker in script.get('workers', []):

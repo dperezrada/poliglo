@@ -6,7 +6,7 @@
         <th>Status</th>
     </thead>
     <tbody>
-        <tr ng-repeat="process in processes">
+        <tr ng-repeat="process in processes|orderBy: 'start_time': true">
             <td>{{process.start_time_formatted}}</td>
             <td><a ui-sref="process.show({processId: process.id})">{{process.name}}</a></td>
             <td>{{processStatus[process.id]}}</td>
