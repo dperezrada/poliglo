@@ -9,7 +9,7 @@ from datetime import datetime
 
 from flask import Flask, request, abort, jsonify, Response
 from flask.ext.cors import CORS
-from poliglo import get_connection, add_data_to_next_worker, start_process
+from poliglo import get_connection, add_data_to_next_worker, start_workflow_instance
 from poliglo import REDIS_KEY_INSTANCE_WORKER_FINALIZED_JOBS, REDIS_KEY_INSTANCE_WORKER_DISCARDED, REDIS_KEY_INSTANCE_WORKER_JOBS, REDIS_KEY_INSTANCE_WORKER_ERRORS
 from poliglo.utils import to_json, json_loads
 
@@ -28,43 +28,43 @@ def load_config(path):
         return json.load(open(path))
     return {}
 
-def load_scripts(path):
-    scripts = []
+def load_workflows(path):
+    workflows = []
     if path and os.path.exists(path):
         for root, _, filenames in os.walk(path):
             for filename in fnmatch.filter(filenames, '*.json'):
-                script = json.load(open(os.path.join(root, filename)))
-                scripts.append(script)
-                for worker in script.get('workers', []):
-                    WORKERS_TYPES[worker.get('id')] = worker.get('worker_type')
-    return scripts
+                workflow = json.load(open(os.path.join(root, filename)))
+                workflows.append(workflow)
+                for worker in workflow.get('workers', []):
+                    WORKERS_TYPES[worker.get('id')] = worker.get('meta_worker')
+    return workflows
 
 
 CONFIG = load_config(os.environ.get('CONFIG_PATH'))
-SCRIPTS = load_scripts(os.environ.get('SCRIPTS_PATH'))
+WORKFLOWS = load_workflows(os.environ.get('WORKFLOWS_PATH'))
 
-def _get_script(script_id):
-    script_found = [script for script in SCRIPTS if script.get('id') == script_id]
-    if len(script_found) == 0:
+def _get_workflow(workflow_id):
+    workflow_found = [workflow for workflow in WORKFLOWS if workflow.get('id') == workflow_id]
+    if len(workflow_found) == 0:
         abort(404)
-    return script_found[0]
+    return workflow_found[0]
 
-def _get_process(connection, process_id):
-    processes_keys = connection.keys(
-        'scripts:*:processes:%s' % process_id
+def _get_workflow_instance(connection, workflow_instance_id):
+    workflow_instances_keys = connection.keys(
+        'workflows:*:workflow_instances:%s' % workflow_instance_id
     )
     found_something = False
-    if len(processes_keys) > 0:
-        process_data = connection.hgetall(processes_keys[0])
-        if process_data:
-            script_type = processes_keys[0].split('scripts:')[1].split(':')[0]
-            process_data['type'] = script_type
-            process_data['id'] = process_id
+    if len(workflow_instances_keys) > 0:
+        workflow_instance_data = connection.hgetall(workflow_instances_keys[0])
+        if workflow_instance_data:
+            workflow_type = workflow_instances_keys[0].split('workflows:')[1].split(':')[0]
+            workflow_instance_data['type'] = workflow_type
+            workflow_instance_data['id'] = workflow_instance_id
             found_something = True
     if found_something:
-        return process_data
+        return workflow_instance_data
     else:
-        abort(404, "No such with id: %s" % process_id)
+        abort(404, "No such with id: %s" % workflow_instance_id)
 
 def _redis_mget(redis_con, keys_wild):
     workers_keys = redis_con.keys(keys_wild)
@@ -77,12 +77,12 @@ def _workers_dict_data(key_prefix, workers_keys, workers_data):
     return dict(zip(workers, workers_data))
 
 
-@app.route('/worker_types', methods=['GET'])
+@app.route('/meta_workers', methods=['GET'])
 def get_workers():
     workers_list = [
-        worker.get('worker_type')
-        for script in SCRIPTS
-        for worker in script.get('workers')
+        worker.get('meta_worker')
+        for workflow in WORKFLOWS
+        for worker in workflow.get('workers')
     ]
     return Response(
         json.dumps(
@@ -90,96 +90,96 @@ def get_workers():
         ), mimetype='application/json'
     )
 
-@app.route('/worker_types/<worker_type>/config', methods=['GET'])
-def get_worker_config(worker_type):
+@app.route('/meta_workers/<meta_worker>/config', methods=['GET'])
+def get_worker_config(meta_worker):
     config = CONFIG.get('all', {})
-    config.update(CONFIG.get(worker_type, {}))
+    config.update(CONFIG.get(meta_worker, {}))
     return jsonify(config)
 
-@app.route('/worker_types/<worker_type>/scripts', methods=['GET'])
-def get_worker_plan(worker_type):
+@app.route('/meta_workers/<meta_worker>/workflows', methods=['GET'])
+def get_worker_plan(meta_worker):
     return_data = {}
-    for script in SCRIPTS:
+    for workflow in WORKFLOWS:
         workers = [
-            worker for worker in script.get('workers', [])
-            if worker.get('worker_type') == worker_type
+            worker for worker in workflow.get('workers', [])
+            if worker.get('meta_worker') == meta_worker
         ]
         for worker in workers:
-            if not return_data.get(script.get('id')):
-                return_data[script.get('id')] = {}
+            if not return_data.get(workflow.get('id')):
+                return_data[workflow.get('id')] = {}
             worker['__next_workers_types'] = [
                 WORKERS_TYPES.get(output_worker_id) for output_worker_id in worker.get('next_workers', [])
             ]
-            return_data[script.get('id')][worker.get('id')] = worker
+            return_data[workflow.get('id')][worker.get('id')] = worker
     return jsonify(return_data)
 
 
-@app.route('/scripts', methods=['GET'])
-def get_all_scripts():
-    scripts = []
-    for script in SCRIPTS:
-        scripts.append({
-            'type': script.get('id'),
-            'name': script.get('name'),
-            'start_worker_id': script.get('start_worker_id'),
-            'group': script.get('group') or 'No group'
+@app.route('/workflows', methods=['GET'])
+def get_all_workflows():
+    workflows = []
+    for workflow in WORKFLOWS:
+        workflows.append({
+            'type': workflow.get('id'),
+            'name': workflow.get('name'),
+            'start_worker_id': workflow.get('start_worker_id'),
+            'group': workflow.get('group') or 'No group'
         })
     if request.args.get('by_group') is not None:
         groups = {}
-        for script in scripts:
-            group = script.get('group')
+        for workflow in workflows:
+            group = workflow.get('group')
             if not groups.get(group):
                 groups[group] = []
-            groups[group].append(script)
-        scripts = groups
-    return Response(json.dumps(scripts), mimetype='application/json')
+            groups[group].append(workflow)
+        workflows = groups
+    return Response(json.dumps(workflows), mimetype='application/json')
 
-@app.route('/scripts/<script_id>', methods=['GET'])
-def get_script(script_id):
-    script = _get_script(script_id)
-    return jsonify(script)
+@app.route('/workflows/<workflow_id>', methods=['GET'])
+def get_workflow(workflow_id):
+    workflow = _get_workflow(workflow_id)
+    return jsonify(workflow)
 
-@app.route('/scripts/<script_id>/processes', methods=['GET'])
-def get_script_processes(script_id):
+@app.route('/workflows/<workflow_id>/workflow_instances', methods=['GET'])
+def get_workflow_workflow_instances(workflow_id):
     redis_con = get_connection(CONFIG.get('all'))
-    processes = redis_con.zrange('scripts:%s:processes' % script_id, -25, -1)
-    return_data = [json.loads(process) for process in processes]
+    workflow_instances = redis_con.zrange('workflows:%s:workflow_instances' % workflow_id, -25, -1)
+    return_data = [json.loads(workflow_instance) for workflow_instance in workflow_instances]
     return Response(json.dumps(return_data), mimetype='application/json')
 
-@app.route('/scripts/<script_id>/processes', methods=['POST'])
-def create_script_process(script_id):
+@app.route('/workflows/<workflow_id>/workflow_instances', methods=['POST'])
+def create_workflow_workflow_instance(workflow_id):
     redis_con = get_connection(CONFIG.get('all'))
-    script = _get_script(script_id)
+    workflow = _get_workflow(workflow_id)
     data = request.get_json()
-    start_worker_id = script.get('start_worker_id')
-    worker_type = ([
-        worker.get('worker_type') for worker in script.get('workers')
+    start_worker_id = workflow.get('start_worker_id')
+    meta_worker = ([
+        worker.get('meta_worker') for worker in workflow.get('workers')
         if worker.get('id') == start_worker_id
     ] or [None])[0]
-    if worker_type:
-        process_id = start_process(
-            redis_con, script_id, worker_type, script.get('start_worker_id'),
+    if meta_worker:
+        workflow_instance_id = start_workflow_instance(
+            redis_con, workflow_id, meta_worker, workflow.get('start_worker_id'),
             data.get('name'), data.get('data', {})
         )
-        return Response(json.dumps({'id': process_id}), status=201)
+        return Response(json.dumps({'id': workflow_instance_id}), status=201)
     return Response(status=404)
 
-@app.route('/processes/<process_id>', methods=['GET'])
-def get_process(process_id):
+@app.route('/workflow_instances/<workflow_instance_id>', methods=['GET'])
+def get_workflow_instance(workflow_instance_id):
     connection = get_connection(CONFIG.get('all'))
-    script = _get_process(connection, process_id)
-    return jsonify(script)
+    workflow = _get_workflow_instance(connection, workflow_instance_id)
+    return jsonify(workflow)
 
-@app.route('/processes/<process_id>/status', methods=['GET'])
-def get_process_status(process_id):
+@app.route('/workflow_instances/<workflow_instance_id>/status', methods=['GET'])
+def get_workflow_instance_status(workflow_instance_id):
     # TODO: refactor this code
     # TODO: support discarded
     connection = get_connection(CONFIG.get('all'))
-    process_data = _get_process(connection, process_id)
+    workflow_instance_data = _get_workflow_instance(connection, workflow_instance_id)
 
     errors_keys = connection.keys(
         REDIS_KEY_INSTANCE_WORKER_ERRORS % (
-            process_data.get('type'), process_id, '*'
+            workflow_instance_data.get('type'), workflow_instance_id, '*'
         )
     )
     if len(errors_keys) > 0:
@@ -187,13 +187,13 @@ def get_process_status(process_id):
 
     total_jobs_keys = connection.keys(
         REDIS_KEY_INSTANCE_WORKER_JOBS % (
-            process_data.get('type'), process_id, '*', 'total'
+            workflow_instance_data.get('type'), workflow_instance_id, '*', 'total'
         )
     )
 
     done_jobs_keys = connection.keys(
         REDIS_KEY_INSTANCE_WORKER_JOBS % (
-            process_data.get('type'), process_id, '*', 'done'
+            workflow_instance_data.get('type'), workflow_instance_id, '*', 'done'
         )
     )
 
@@ -214,13 +214,13 @@ def get_process_status(process_id):
         status = 'done'
     return jsonify({'status': status})
 
-@app.route('/processes/<process_id>/workers/<worker_id>/<string:option>', methods=['GET'])
-def get_process_worker_jobs_type(process_id, worker_id, option):
+@app.route('/workflow_instances/<workflow_instance_id>/workers/<worker_id>/<string:option>', methods=['GET'])
+def get_workflow_instance_worker_jobs_type(workflow_instance_id, worker_id, option):
     connection = get_connection(CONFIG.get('all'))
-    process_data = _get_process(connection, process_id)
+    workflow_instance_data = _get_workflow_instance(connection, workflow_instance_id)
     jobs = connection.zrange(
-        "scripts:%s:processes:%s:workers:%s:%s" % (
-            process_data.get('type'), process_id, worker_id, option
+        "workflows:%s:workflow_instances:%s:workers:%s:%s" % (
+            workflow_instance_data.get('type'), workflow_instance_id, worker_id, option
         ),
         -20, -1, withscores=True
     )
@@ -232,14 +232,14 @@ def get_process_worker_jobs_type(process_id, worker_id, option):
         json.dumps(jobs), mimetype='application/json'
     )
 
-@app.route('/processes/<process_id>/workers/<worker_id>/errors/<option>/<redis_score>', methods=['GET'])
-def action_over_worker_job_type(process_id, worker_id, option, redis_score):
+@app.route('/workflow_instances/<workflow_instance_id>/workers/<worker_id>/errors/<option>/<redis_score>', methods=['GET'])
+def action_over_worker_job_type(workflow_instance_id, worker_id, option, redis_score):
     connection = get_connection(CONFIG.get('all'))
-    process_data = _get_process(connection, process_id)
-    script_id = process_data.get('type')
-    script = _get_script(script_id)
-    redis_key = "scripts:%s:processes:%s:workers:%s:errors" % (
-        process_data.get('type'), process_id, worker_id
+    workflow_instance_data = _get_workflow_instance(connection, workflow_instance_id)
+    workflow_id = workflow_instance_data.get('type')
+    workflow = _get_workflow(workflow_id)
+    redis_key = "workflows:%s:workflow_instances:%s:workers:%s:errors" % (
+        workflow_instance_data.get('type'), workflow_instance_id, worker_id
     )
     if redis_score == 'all':
         errors_list = connection.zrange(redis_key, 0, -1, withscores=True)
@@ -248,15 +248,15 @@ def action_over_worker_job_type(process_id, worker_id, option, redis_score):
     if len(errors_list) > 0:
         for raw_data, redis_score in errors_list:
             if option == 'retry':
-                worker_type = [
-                    worker.get('worker_type') for worker in script.get('workers')
+                meta_worker = [
+                    worker.get('meta_worker') for worker in workflow.get('workers')
                     if worker.get('id') == worker_id
                 ]
-                add_data_to_next_worker(connection, worker_type[0], raw_data)
+                add_data_to_next_worker(connection, meta_worker[0], raw_data)
             else:
                 # discard
                 connection.zadd(
-                    REDIS_KEY_INSTANCE_WORKER_DISCARDED % (process_data.get('type'), process_id, worker_id),
+                    REDIS_KEY_INSTANCE_WORKER_DISCARDED % (workflow_instance_data.get('type'), workflow_instance_id, worker_id),
                     time.time(),
                     raw_data
                 )
@@ -265,20 +265,20 @@ def action_over_worker_job_type(process_id, worker_id, option, redis_score):
         abort(404, "No such error id: %s" % redis_score)
     return jsonify({})
 
-@app.route('/processes/<process_id>/stats', methods=['GET'])
-def get_process_stats(process_id):
+@app.route('/workflow_instances/<workflow_instance_id>/stats', methods=['GET'])
+def get_workflow_instance_stats(workflow_instance_id):
     # TODO: Refactor this code
     connection = get_connection(CONFIG.get('all'))
-    process_data = _get_process(connection, process_id)
+    workflow_instance_data = _get_workflow_instance(connection, workflow_instance_id)
 
-    workers_prefix = "scripts:%s:processes:%s:workers:" % (
-        process_data.get('type'), process_id
+    workers_prefix = "workflows:%s:workflow_instances:%s:workers:" % (
+        workflow_instance_data.get('type'), workflow_instance_id
     )
     workers_data = {}
 
     for status_type in ('done', 'total'):
         pipe = connection.pipeline()
-        workers_keys = connection.keys(REDIS_KEY_INSTANCE_WORKER_JOBS % (process_data.get('type'), process_id, '*', status_type))
+        workers_keys = connection.keys(REDIS_KEY_INSTANCE_WORKER_JOBS % (workflow_instance_data.get('type'), workflow_instance_id, '*', status_type))
         for key in workers_keys:
             pipe.scard(key)
         workers_data[status_type] = _workers_dict_data(workers_prefix, workers_keys, pipe.execute())
@@ -305,14 +305,14 @@ def get_process_stats(process_id):
     return jsonify({'workers': workers_stats})
 
 
-@app.route('/processes/<process_id>/outputs', methods=['GET'])
-def get_process_outputs(process_id):
+@app.route('/workflow_instances/<workflow_instance_id>/outputs', methods=['GET'])
+def get_workflow_instance_outputs(workflow_instance_id):
     connection = get_connection(CONFIG.get('all'))
-    process_data = _get_process(connection, process_id)
-    script_id = process_data.get('type')
-    script = _get_script(script_id)
-    worker_id = script.get('workers')[-1]['id']
-    target_key = REDIS_KEY_INSTANCE_WORKER_FINALIZED_JOBS % (script_id, process_id, worker_id)
+    workflow_instance_data = _get_workflow_instance(connection, workflow_instance_id)
+    workflow_id = workflow_instance_data.get('type')
+    workflow = _get_workflow(workflow_id)
+    worker_id = workflow.get('workers')[-1]['id']
+    target_key = REDIS_KEY_INSTANCE_WORKER_FINALIZED_JOBS % (workflow_id, workflow_instance_id, worker_id)
     return to_json([
         json_loads(data).get('workers_output', {}).get(worker_id) for data in connection.zrange(target_key, 0, -1)
     ])
