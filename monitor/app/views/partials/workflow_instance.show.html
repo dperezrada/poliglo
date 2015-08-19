@@ -1,0 +1,30 @@
+<ol class="breadcrumb">
+    <li><a ui-sref="workflows.list">Scripts</a></li>
+    <li><a ui-sref="workflows.list_workflow_instances({workflow: workflow.id})">{{workflow.name}}</a></li>
+    <li><a ui-sref="workflowInstance.show({workflowInstanceId: workflowInstance.id})">{{workflowInstance.name}}</a></li>
+</ol>
+<h1>{{workflowInstance.name}}</h1>
+
+<h3>Workers:</h3>
+<table class="table">
+    <thead>
+        <th>Name</th>
+        <th>Total</th>
+        <th>Done</th>
+        <th>Errors</th>
+        <th>Discarded</th>
+        <th>Finalized</th>
+    </thead>
+    <tbody>
+        <tr ng-repeat="worker in workers">
+            <td>{{worker}}</td>
+            <td>{{workflowInstanceStats.workers[worker].total || 0}}</td>
+            <td>{{workflowInstanceStats.workers[worker].done || 0}}</td>
+            <td><a href="#" ui-sref="workflowInstance.workerErrors({workflowInstanceId: workflowInstance.id, workerId: worker})">{{workflowInstanceStats.workers[worker].errors || 0}}</a></td>
+            <td>{{workflowInstanceStats.workers[worker].discarded || 0}}</td>
+            <td><a href="#" ui-sref="workflowInstance.workerFinalized({workflowInstanceId: workflowInstance.id, workerId: worker})">{{workflowInstanceStats.workers[worker].finalized || 0}}</a></td>
+
+        </tr>
+    </tbody>
+</table>
+

@@ -2,50 +2,49 @@
 
 /**
  * @ngdoc function
- * @name poligloMonitorApp.controller:ProcessCtrl
+ * @name poligloMonitorApp.controller:WorkflowInstanceCtrl
  * @description
- * # ProcessCtrl
+ * # WorkflowInstanceCtrl
  * Controller of the poligloMonitorApp
  */
 angular.module('poligloMonitorApp')
-    .controller('ScriptsListCtrl', function ($scope, Process, Script) {
-        Script.list(true, function(data){
-            $scope.scriptGroups = data;
+    .controller('WorkflowsListCtrl', function ($scope, WorkflowInstance, Workflow) {
+        Workflow.list(true, function(data){
+            $scope.workflowGroups = data;
         });
     })
-    .controller('ProcessesListCtrl', function ($scope, $stateParams, $interval, Process, Script) {
-            $scope.processStatus = {};
-            Script.get($stateParams.scriptType, function(data){
-                $scope.script = data;
+    .controller('WorkflowInstancesListCtrl', function ($scope, $stateParams, $interval, WorkflowInstance, Workflow) {
+        $scope.workflowInstanceStatus = {};
+        Workflow.get($stateParams.workflow, function(data){
+            $scope.workflow = data;
+        });
+        var getStatus = function(statusId){
+            WorkflowInstance.status(statusId, function(data){
+                $scope.workflowInstanceStatus[statusId] = data.status;
             });
-            var getStatus = function(statusId){
-                Process.status(statusId, function(data){
-                    $scope.processStatus[statusId] = data.status;
-                });
-            };
-            var updateProcessStatus = function(){
-                for (var i = 0; i < $scope.processes.length; i++) {
-                    $scope.processes[i].start_time_formatted = window.moment($scope.processes[i].start_time*1000).fromNow();
-                    getStatus($scope.processes[i].id);
+        };
+        var updateWorkflowInstanceStatus = function(){
+            for (var i = 0; i < $scope.workflowInstances.length; i++) {
+                $scope.workflowInstances[i].start_time_formatted = window.moment($scope.workflowInstances[i].start_time*1000).fromNow();
+                getStatus($scope.workflowInstances[i].id);
 
-                }
-            };
+            }
+        };
 
-            var updateProcesessList = function(){
-                Script.listProcesses($stateParams.scriptType, function(data){
-                    $scope.processes = data;
-                    updateProcessStatus();
-                });
-            };
-            $scope.$on('$stateChangeStart',
-                function(){
-                    $interval.cancel($scope.interval);
-                }
-            );
-            $scope.interval = $interval(updateProcesessList, 1000);
-
-
-    }).controller('ProcessShowCtrl', function ($scope, $stateParams, $interval, Process, Script) {
+        var updateWorkflowInstancesList = function(){
+            Workflow.listWorkflowInstances($stateParams.workflow, function(data){
+                $scope.workflowInstances = data;
+                updateWorkflowInstanceStatus();
+            });
+        };
+        $scope.$on('$stateChangeStart',
+            function(){
+                $interval.cancel($scope.interval);
+            }
+        );
+        $scope.interval = $interval(updateWorkflowInstancesList, 1000);
+    })
+    .controller('WorkflowInstanceShowCtrl', function ($scope, $stateParams, $interval, WorkflowInstance, Workflow) {
         var getConnections = function(workers, nodeId){
             var connections = [];
             var worker = getWorker(workers, nodeId);
@@ -92,14 +91,14 @@ angular.module('poligloMonitorApp')
         };
 
         var updateStats = function(){
-            Process.stats($stateParams.processId, function(data){
-                $scope.processStats = data;
+            WorkflowInstance.stats($stateParams.workflowInstanceId, function(data){
+                $scope.workflowInstanceStats = data;
             });
         };
 
-        Process.get($stateParams.processId, function(data){
-            $scope.process = data;
-            Script.get($scope.process.type, function(data){
+        WorkflowInstance.get($stateParams.workflowInstanceId, function(data){
+            $scope.workflowInstance = data;
+            Workflow.get($scope.workflowInstance.type, function(data){
                 $scope.script = data;
                 getWorkers();
                 updateStats();
@@ -112,51 +111,51 @@ angular.module('poligloMonitorApp')
         );
         $scope.interval = $interval(updateStats, 1000);
 
-    }).controller('ProcessWorkerErrorsCtrl', function ($scope, $stateParams, Process) {
+    }).controller('WorkflowInstanceWorkerErrorsCtrl', function ($scope, $stateParams, WorkflowInstance) {
         $scope.workerId = $stateParams.workerId;
         $scope.discardError = function(index){
-            Process.discardError(
-                $scope.process.id, $stateParams.workerId, $scope.errors[index].redis_score,
+            WorkflowInstance.discardError(
+                $scope.workflowInstance.id, $stateParams.workerId, $scope.errors[index].redis_score,
                 function(data){
                     updateErrors();
                 }
             );
         };
         $scope.retryError = function(index){
-            Process.retryError(
-                $scope.process.id, $stateParams.workerId, $scope.errors[index].redis_score,
+            WorkflowInstance.retryError(
+                $scope.workflowInstance.id, $stateParams.workerId, $scope.errors[index].redis_score,
                 function(data){
                     updateErrors();
                 }
             );
         };
         $scope.retryAllErrors = function(){
-            Process.retryAllErrors(
-                $scope.process.id, $stateParams.workerId,
+            WorkflowInstance.retryAllErrors(
+                $scope.workflowInstance.id, $stateParams.workerId,
                 function(){
                     updateErrors();
                 }
             );
         };
         var updateErrors = function(){
-            Process.workerErrors(
-                $stateParams.processId, $stateParams.workerId, function(data){
+            WorkflowInstance.workerErrors(
+                $stateParams.workflowInstanceId, $stateParams.workerId, function(data){
                     $scope.errors = data;
                 }
             );
         };
 
-        Process.get($stateParams.processId, function(data){
-            $scope.process = data;
+        WorkflowInstance.get($stateParams.workflowInstanceId, function(data){
+            $scope.workflowInstance = data;
             updateErrors();
 
         });
-    }).controller('ProcessWorkerFinalizedCtrl', function ($scope, $stateParams, Process) {
+    }).controller('WorkflowInstanceWorkerFinalizedCtrl', function ($scope, $stateParams, WorkflowInstance) {
         $scope.workerId = $stateParams.workerId;
 
         var updateFinalized = function(){
-            Process.workerFinalized(
-                $stateParams.processId, $stateParams.workerId, function(data){
+            WorkflowInstance.workerFinalized(
+                $stateParams.workflowInstanceId, $stateParams.workerId, function(data){
                     $scope.finalized = data;
                 }
             );
@@ -166,8 +165,8 @@ angular.module('poligloMonitorApp')
             return JSON.stringify(obj, null, 2);
         };
 
-        Process.get($stateParams.processId, function(data){
-            $scope.process = data;
+        WorkflowInstance.get($stateParams.workflowInstanceId, function(data){
+            $scope.workflowInstance = data;
             updateFinalized();
         });
     });

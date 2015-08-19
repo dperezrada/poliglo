@@ -8,9 +8,9 @@
  * Controller of the poligloMonitorApp
  */
 angular.module('poligloMonitorApp')
-  .controller('WorkersErrorsCtrl', function ($scope, $stateParams, Worker) {
-    Worker.errors($stateParams.workerId, function(data){
-        $scope.errors = data;
-        $scope.workerId = $stateParams.workerId;
-    });
-  });
+  // .controller('WorkersErrorsCtrl', function ($scope, $stateParams, Worker) {
+  //   Worker.errors($stateParams.workerId, function(data){
+  //       $scope.errors = data;
+  //       $scope.workerId = $stateParams.workerId;
+  //   });
+  // });
