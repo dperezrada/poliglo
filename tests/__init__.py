@@ -23,61 +23,55 @@ WORKFLOWS = [
         "id": "workflow_1",
         "name": "Script 1",
         "start_worker_id": "filter_1",
-        "workers": [
-            {
-                "id": "filter_1",
+        "workers": {
+            "filter_1": {
                 "meta_worker": "filter",
                 "default_inputs": {
                     "include": ["price", ">=", 100]
                 },
                 "next_workers": ["write_1"]
             },
-            {
-                "id": "write_1",
+            "write_1": {
                 "meta_worker": "write",
                 "default_inputs": {
                     "target": "/tmp/example"
                 }
             }
-        ]
+        }
     },
     {
         "id": "workflow_2",
         "name": "Script 2",
         "start_worker_id    ": "filter_1",
-        "workers": [
-            {
-                "id": "filter_1",
+        "workers": {
+            "filter_1": {
                 "meta_worker": "filter",
                 "default_inputs": {
                     "include": ["price", ">=", 100]
                 },
                 "next_workers": ["add_one_1"]
             },
-            {
-                "id": "add_one_1",
+            "add_one_1": {
                 "meta_worker": "add_one",
                 "default_inputs": {
                     "target_fields": ["price"]
                 },
                 "next_workers": ["filter_2"]
             },
-            {
-                "id": "filter_2",
+            "filter_2": {
                 "meta_worker": "filter",
                 "default_inputs": {
                     "include": ["price", ">=", 101]
                 },
                 "next_workers": ["send_to_s3_1"]
             },
-            {
-                "id": "send_to_s3_1",
+            "send_to_s3_1": {
                 "meta_worker": "send_to_s3",
                 "default_inputs": {
                     "read_file": "/tmp/example"
                 }
             }
-        ]
+        }
     }
 ]
 
@@ -156,7 +150,7 @@ class TestPoligloServer(unittest.TestCase):
         )
 
         self.assertEqual(
-            WORKFLOWS[1]['workers'][0]['default_inputs'],
+            WORKFLOWS[1]['workers']['filter_1']['default_inputs'],
             meta_worker_workflows['workflow_2']['filter_1']['default_inputs']
         )
 

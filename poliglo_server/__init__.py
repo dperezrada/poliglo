@@ -35,8 +35,8 @@ def load_workflows(path):
             for filename in fnmatch.filter(filenames, '*.json'):
                 workflow = json.load(open(os.path.join(root, filename)))
                 workflows.append(workflow)
-                for worker in workflow.get('workers', []):
-                    WORKERS_TYPES[worker.get('id')] = worker.get('meta_worker')
+                for worker_id, worker in workflow.get('workers', {}).iteritems():
+                    WORKERS_TYPES[worker_id] = worker.get('meta_worker')
     return workflows
 
 
@@ -79,14 +79,14 @@ def _workers_dict_data(key_prefix, workers_keys, workers_data):
 
 @app.route('/meta_workers', methods=['GET'])
 def get_workers():
-    workers_list = [
+    meta_workers_list = [
         worker.get('meta_worker')
         for workflow in WORKFLOWS
-        for worker in workflow.get('workers')
+        for _, worker in workflow.get('workers', {}).iteritems()
     ]
     return Response(
         json.dumps(
-            list(set(workers_list))
+            list(set(meta_workers_list))
         ), mimetype='application/json'
     )
 
@@ -100,17 +100,17 @@ def get_worker_config(meta_worker):
 def get_worker_plan(meta_worker):
     return_data = {}
     for workflow in WORKFLOWS:
-        workers = [
-            worker for worker in workflow.get('workers', [])
+        workers = {
+            worker_id: worker for worker_id, worker in workflow.get('workers', {}).iteritems()
             if worker.get('meta_worker') == meta_worker
-        ]
-        for worker in workers:
+        }
+        for worker_id, worker in workers.iteritems():
             if not return_data.get(workflow.get('id')):
                 return_data[workflow.get('id')] = {}
             worker['__next_workers_types'] = [
                 WORKERS_TYPES.get(output_worker_id) for output_worker_id in worker.get('next_workers', [])
             ]
-            return_data[workflow.get('id')][worker.get('id')] = worker
+            return_data[workflow.get('id')][worker_id] = worker
     return jsonify(return_data)
 
 
@@ -153,8 +153,8 @@ def create_workflow_workflow_instance(workflow_id):
     data = request.get_json()
     start_worker_id = workflow.get('start_worker_id')
     meta_worker = ([
-        worker.get('meta_worker') for worker in workflow.get('workers')
-        if worker.get('id') == start_worker_id
+        worker.get('meta_worker') for worker_id, worker in workflow.get('workers', {}).iteritems()
+        if worker_id == start_worker_id
     ] or [None])[0]
     if meta_worker:
         workflow_instance_id = start_workflow_instance(
@@ -249,8 +249,8 @@ def action_over_worker_job_type(workflow_instance_id, worker_id, option, redis_s
         for raw_data, redis_score in errors_list:
             if option == 'retry':
                 meta_worker = [
-                    worker.get('meta_worker') for worker in workflow.get('workers')
-                    if worker.get('id') == worker_id
+                    worker.get('meta_worker') for it_worker_id, worker in workflow.get('workers', {}).iteritems()
+                    if it_worker_id == worker_id
                 ]
                 add_data_to_next_worker(connection, meta_worker[0], raw_data)
             else:
@@ -305,13 +305,26 @@ def get_workflow_instance_stats(workflow_instance_id):
     return jsonify({'workers': workers_stats})
 
 
+def _find_last_worker_id(workflow, next_worker_id):
+    next_workers_ids = workflow.get('workers', {}).get(next_worker_id, {}).get('next_workers', [])
+    if len(next_workers_ids) == 0:
+        return [next_worker_id, ]
+    else:
+        final_workers = []
+        for worker_id in next_workers_ids:
+            final_workers += _find_last_worker_id(workflow, worker_id)
+        return final_workers
+
+
+
 @app.route('/workflow_instances/<workflow_instance_id>/outputs', methods=['GET'])
 def get_workflow_instance_outputs(workflow_instance_id):
     connection = get_connection(CONFIG.get('all'))
     workflow_instance_data = _get_workflow_instance(connection, workflow_instance_id)
     workflow_id = workflow_instance_data.get('type')
     workflow = _get_workflow(workflow_id)
-    worker_id = workflow.get('workers')[-1]['id']
+    # TODO: Manage multiple final nodes
+    worker_id = _find_last_worker_id(workflow, workflow.get('start_worker_id'))[0]
     target_key = REDIS_KEY_INSTANCE_WORKER_FINALIZED_JOBS % (workflow_id, workflow_instance_id, worker_id)
     return to_json([
         json_loads(data).get('workers_output', {}).get(worker_id) for data in connection.zrange(target_key, 0, -1)

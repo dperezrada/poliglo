@@ -55,7 +55,7 @@ angular.module('poligloMonitorApp')
         };
 
         var getWorker = function(workers, nodeId){
-            return _.findWhere(workers, {id: nodeId});
+            return workers[nodeId];
         };
 
         var getEdges = function(startNode, workers){
@@ -79,8 +79,8 @@ angular.module('poligloMonitorApp')
 
         var getWorkers = function(){
             var connections = getEdges(
-                $scope.script.start_worker_id,
-                $scope.script.workers
+                $scope.workflow.start_worker_id,
+                $scope.workflow.workers
             );
             $scope.workers = [];
             var i = 0;
@@ -99,7 +99,7 @@ angular.module('poligloMonitorApp')
         WorkflowInstance.get($stateParams.workflowInstanceId, function(data){
             $scope.workflowInstance = data;
             Workflow.get($scope.workflowInstance.type, function(data){
-                $scope.script = data;
+                $scope.workflow = data;
                 getWorkers();
                 updateStats();
             });
