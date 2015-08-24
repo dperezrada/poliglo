@@ -1,0 +1,15 @@
+<h1>{{workflow.name}}</h1>
+<table class="table">
+    <thead>
+        <th>Date</th>
+        <th>Instance name</th>
+        <th>Status</th>
+    </thead>
+    <tbody>
+        <tr ng-repeat="workflowInstance in workflowInstances|orderBy: 'start_time': true">
+            <td>{{workflowInstance.start_time_formatted}}</td>
+            <td><a ui-sref="workflowInstance.show({workflowInstanceId: workflowInstance.id})">{{workflowInstance.name}}</a></td>
+            <td>{{workflowInstanceStatus[workflowInstance.id]}}</td>
+        </tr>
+    </tbody>
+</table>

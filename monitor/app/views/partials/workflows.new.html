@@ -1,0 +1,34 @@
+<div ng-repeat="(key, scripts) in scriptGroups">
+    <div>{{key}}</div>
+    <ul>
+        <li ng-repeat="script in scripts"><a ui-sref="scripts.list_processes({scriptType: script.type})">{{script.name}}</a></li>
+    </ul>
+</div>
+
+<form>
+  <div class="form-group">
+    <label for="script_id">Id:</label>
+    <input type="email" class="form-control" id="script_id" placeholder="">
+  </div>
+  <div class="form-group">
+    <label for="script_name">Name:</label>
+    <input type="text" class="form-control" id="script_name" placeholder="">
+  </div>
+  <div class="form-group">
+    <label for="start_worker">Starting WorkerID:</label>
+    <input type="text" class="form-control" id="start_worker" placeholder="">
+  </div>
+
+  <div class="form-group">
+    <label for="script_group">Group (Optional):</label>
+    <input type="text" class="form-control" id="script_group" placeholder="">
+  </div>
+
+  <div>
+    <h2>Workers</h2>
+    <div ng-repeat="worker in workers">
+        <h3>{{worker.name}}</h3>
+    </div>
+  </div>
+  <button type="submit" class="btn btn-default">Submit</button>
+</form>

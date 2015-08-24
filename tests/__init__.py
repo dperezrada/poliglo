@@ -18,66 +18,60 @@ CONFIG = {
     }
 }
 
-SCRIPTS = [
+WORKFLOWS = [
     {
-        "id": "script_1",
+        "id": "workflow_1",
         "name": "Script 1",
         "start_worker_id": "filter_1",
-        "workers": [
-            {
-                "id": "filter_1",
-                "worker_type": "filter",
+        "workers": {
+            "filter_1": {
+                "meta_worker": "filter",
                 "default_inputs": {
                     "include": ["price", ">=", 100]
                 },
                 "next_workers": ["write_1"]
             },
-            {
-                "id": "write_1",
-                "worker_type": "write",
+            "write_1": {
+                "meta_worker": "write",
                 "default_inputs": {
                     "target": "/tmp/example"
                 }
             }
-        ]
+        }
     },
     {
-        "id": "script_2",
+        "id": "workflow_2",
         "name": "Script 2",
         "start_worker_id    ": "filter_1",
-        "workers": [
-            {
-                "id": "filter_1",
-                "worker_type": "filter",
+        "workers": {
+            "filter_1": {
+                "meta_worker": "filter",
                 "default_inputs": {
                     "include": ["price", ">=", 100]
                 },
                 "next_workers": ["add_one_1"]
             },
-            {
-                "id": "add_one_1",
-                "worker_type": "add_one",
+            "add_one_1": {
+                "meta_worker": "add_one",
                 "default_inputs": {
                     "target_fields": ["price"]
                 },
                 "next_workers": ["filter_2"]
             },
-            {
-                "id": "filter_2",
-                "worker_type": "filter",
+            "filter_2": {
+                "meta_worker": "filter",
                 "default_inputs": {
                     "include": ["price", ">=", 101]
                 },
                 "next_workers": ["send_to_s3_1"]
             },
-            {
-                "id": "send_to_s3_1",
-                "worker_type": "send_to_s3",
+            "send_to_s3_1": {
+                "meta_worker": "send_to_s3",
                 "default_inputs": {
                     "read_file": "/tmp/example"
                 }
             }
-        ]
+        }
     }
 ]
 
@@ -106,20 +100,20 @@ class TestPoligloServer(unittest.TestCase):
             'config.json',
             to_json(CONFIG)
         )
-        cls.scripts_path = os.path.join(cls.test_base_path, 'scripts')
+        cls.workflows_path = os.path.join(cls.test_base_path, 'workflows')
 
-        for script in SCRIPTS:
+        for workflow in WORKFLOWS:
             _write_file(
-                cls.scripts_path,
-                'script_'+script.get('id')+'.json',
-                to_json(script)
+                cls.workflows_path,
+                'workflow_'+workflow.get('id')+'.json',
+                to_json(workflow)
             )
 
         poliglo_server.CONFIG = poliglo_server.load_config(cls.config_path)
         poliglo_server.DEBUG = True
 
-        poliglo_server.SCRIPTS = poliglo_server.load_scripts(
-            cls.scripts_path
+        poliglo_server.WORKFLOWS = poliglo_server.load_workflows(
+            cls.workflows_path
         )
         cls.app = poliglo_server.app.test_client()
 
@@ -130,118 +124,118 @@ class TestPoligloServer(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_get_worker_types(self):
-        response = self.app.get('/worker_types')
-        expected_worker_types = ["filter", "write", "send_to_s3", "add_one"]
-        worker_types = json_loads(response.data)
-        self.assertEqual(sorted(expected_worker_types), sorted(worker_types))
+    def test_get_meta_workers(self):
+        response = self.app.get('/meta_workers')
+        expected_meta_workers = ["filter", "write", "send_to_s3", "add_one"]
+        meta_workers = json_loads(response.data)
+        self.assertEqual(sorted(expected_meta_workers), sorted(meta_workers))
 
-    def test_get_worker_type_config(self):
-        response = self.app.get('/worker_types/filter/config')
+    def test_get_meta_worker_config(self):
+        response = self.app.get('/meta_workers/filter/config')
         config = json_loads(response.data)
         expected_config = CONFIG.get('all')
         expected_config.update(CONFIG.get('filter'))
         self.assertEqual(expected_config, config)
 
-    def test_get_worker_type_scripts(self):
-        response = self.app.get('/worker_types/filter/scripts')
-        worker_type_scripts = json_loads(response.data)
+    def test_get_meta_worker_workflows(self):
+        response = self.app.get('/meta_workers/filter/workflows')
+        meta_worker_workflows = json_loads(response.data)
         self.assertEqual(
             ['filter_1'],
-            worker_type_scripts['script_1'].keys()
+            meta_worker_workflows['workflow_1'].keys()
         )
         self.assertEqual(
             sorted(['filter_1', 'filter_2']),
-            sorted(worker_type_scripts['script_2'].keys())
+            sorted(meta_worker_workflows['workflow_2'].keys())
         )
 
         self.assertEqual(
-            SCRIPTS[1]['workers'][0]['default_inputs'],
-            worker_type_scripts['script_2']['filter_1']['default_inputs']
+            WORKFLOWS[1]['workers']['filter_1']['default_inputs'],
+            meta_worker_workflows['workflow_2']['filter_1']['default_inputs']
         )
 
-    def test_get_worker_type_script_set_outputs_type(self):
-        response = self.app.get('/worker_types/filter/scripts')
-        worker_type_scripts = json_loads(response.data)
+    def test_get_meta_worker_workflow_set_outputs_type(self):
+        response = self.app.get('/meta_workers/filter/workflows')
+        meta_worker_workflows = json_loads(response.data)
         self.assertEqual(
             ['write'],
-            worker_type_scripts['script_1']['filter_1'].get('__next_workers_types')
+            meta_worker_workflows['workflow_1']['filter_1'].get('__next_workers_types')
         )
 
-    def test_get_all_scripts(self):
-        response = self.app.get('/scripts')
-        scripts = json_loads(response.data)
-        self.assertEqual(2, len(scripts))
-        script_names = [script.get('name') for script in scripts]
-        self.assertEqual(sorted(['Script 1', 'Script 2']), sorted(script_names))
+    def test_get_all_workflows(self):
+        response = self.app.get('/workflows')
+        workflows = json_loads(response.data)
+        self.assertEqual(2, len(workflows))
+        workflow_names = [workflow.get('name') for workflow in workflows]
+        self.assertEqual(sorted(['Script 1', 'Script 2']), sorted(workflow_names))
 
-    def test_get_all_scripts_grouped(self):
-        response = self.app.get('/scripts?by_group=1')
-        scripts = json_loads(response.data)
-        self.assertEqual(['No group'], scripts.keys())
-        self.assertEqual(2, len(scripts['No group']))
+    def test_get_all_workflows_grouped(self):
+        response = self.app.get('/workflows?by_group=1')
+        workflows = json_loads(response.data)
+        self.assertEqual(['No group'], workflows.keys())
+        self.assertEqual(2, len(workflows['No group']))
 
-    def test_get_one_script(self):
-        response = self.app.get('/scripts/script_1')
-        script = json_loads(response.data)
-        self.assertEqual('Script 1', script.get('name'))
+    def test_get_one_workflow(self):
+        response = self.app.get('/workflows/workflow_1')
+        workflow = json_loads(response.data)
+        self.assertEqual('Script 1', workflow.get('name'))
 
-    def test_get_one_script(self):
-        response = self.app.get('/scripts/script_1')
-        script = json_loads(response.data)
-        self.assertEqual('Script 1', script.get('name'))
+    def test_get_one_workflow(self):
+        response = self.app.get('/workflows/workflow_1')
+        workflow = json_loads(response.data)
+        self.assertEqual('Script 1', workflow.get('name'))
 
-    def test_script_get_process_empty(self):
-        response = self.app.get('/scripts/script_1/processes')
-        processes = json_loads(response.data)
-        self.assertEqual(0, len(processes))
+    def test_workflow_get_workflow_instance_empty(self):
+        response = self.app.get('/workflows/workflow_1/workflow_instances')
+        workflow_instances = json_loads(response.data)
+        self.assertEqual(0, len(workflow_instances))
 
-    def test_script_get_process_one_exists(self):
-        url = '/scripts/script_1/processes'
+    def test_workflow_get_workflow_instance_one_exists(self):
+        url = '/workflows/workflow_1/workflow_instances'
         self.app.post(
             url, data=to_json({'name': 'Script 1 - 1'}),
             headers={'content-type':'application/json'}
         )
 
         response = self.app.get(url)
-        processes = json_loads(response.data)
-        self.assertEqual(1, len(processes))
-        self.assertEqual('Script 1 - 1', processes[0].get('name'))
+        workflow_instances = json_loads(response.data)
+        self.assertEqual(1, len(workflow_instances))
+        self.assertEqual('Script 1 - 1', workflow_instances[0].get('name'))
 
-    def test_get_one_process(self):
+    def test_get_one_workflow_instance(self):
         response = self.app.post(
-            '/scripts/script_1/processes', data=to_json({'name': 'Script 1 - 1'}),
+            '/workflows/workflow_1/workflow_instances', data=to_json({'name': 'Script 1 - 1'}),
             headers={'content-type':'application/json'}
         )
-        process_id = json_loads(response.data).get('id')
-        response = self.app.get('/processes/'+process_id)
-        process = json_loads(response.data)
-        self.assertEqual('Script 1 - 1', process.get('name'))
+        workflow_instance_id = json_loads(response.data).get('id')
+        response = self.app.get('/workflow_instances/'+workflow_instance_id)
+        workflow_instance = json_loads(response.data)
+        self.assertEqual('Script 1 - 1', workflow_instance.get('name'))
 
-    def test_get_process_status_running(self):
+    def test_get_workflow_instance_status_running(self):
         response = self.app.post(
-            '/scripts/script_1/processes', data=to_json({'name': 'Script 1 - 1'}),
+            '/workflows/workflow_1/workflow_instances', data=to_json({'name': 'Script 1 - 1'}),
             headers={'content-type':'application/json'}
         )
-        process_id = json_loads(response.data).get('id')
-        response = self.app.get('/processes/'+process_id+'/status')
-        process = json_loads(response.data)
-        self.assertEqual('running', process.get('status'))
+        workflow_instance_id = json_loads(response.data).get('id')
+        response = self.app.get('/workflow_instances/'+workflow_instance_id+'/status')
+        workflow_instance = json_loads(response.data)
+        self.assertEqual('running', workflow_instance.get('status'))
 
     @unittest.skip("Missing implementation")
-    def test_get_process_status_done(self):
+    def test_get_workflow_instance_status_done(self):
         pass
 
     @unittest.skip("Missing implementation")
-    def test_get_process_status_errors(self):
+    def test_get_workflow_instance_status_errors(self):
         pass
 
     @unittest.skip("Missing implementation")
-    def test_get_process_status_pending(self):
+    def test_get_workflow_instance_status_pending(self):
         pass
 
     @unittest.skip("Missing implementation")
-    def test_get_process_worker_jobs_type(self):
+    def test_get_workflow_instance_worker_jobs_type(self):
         pass
 
     @unittest.skip("Missing implementation")
@@ -249,7 +243,7 @@ class TestPoligloServer(unittest.TestCase):
         pass
 
     @unittest.skip("Missing implementation")
-    def test_get_process_stats(self):
+    def test_get_workflow_instance_stats(self):
         pass
 
 if __name__ == '__main__':

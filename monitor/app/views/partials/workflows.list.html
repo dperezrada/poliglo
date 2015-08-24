@@ -1,0 +1,7 @@
+<div ng-repeat="(key, workflows) in workflowGroups">
+    <div>{{key}}</div>
+    <ul>
+        <li ng-repeat="workflow in workflows"><a ui-sref="workflows.listWorkflowInstances({workflow: workflow.type})">{{workflow.name}}</a></li>
+    </ul>
+</div>
+<div ui-view></div>

@@ -2,34 +2,34 @@
 
 /**
  * @ngdoc service
- * @name poligloMonitorApp.Script
+ * @name poligloMonitorApp.Workflow
  * @description
- * # Script
+ * # Workflow
  * Service in the poligloMonitorApp.
  */
 angular.module('poligloMonitorApp')
-  .service('Script', function ($http, ENV) {
+  .service('Workflow', function ($http, ENV) {
     var baseUrl = ENV.apiEndpoint;
 
     var list = function(byGroup, callback){
-        var url = baseUrl+'/scripts';
+        var url = baseUrl+'/workflows';
         if(byGroup){
             url += '?by_group=1';
         }
         $http.get(url).
             success(callback);
     };
-    var listProcesses = function(scriptType, callback){
+    var listWorkflowInstances = function(workflow, callback){
         var url;
-        if(scriptType){
-            url = baseUrl+'/scripts/'+scriptType+'/processes';
+        if(workflow){
+            url = baseUrl+'/workflows/'+workflow+'/workflow_instances';
         }
 
         $http.get(url).
             success(callback);
     };
-    var get = function(scriptType, callback){
-        var url = baseUrl+'/scripts/'+scriptType;
+    var get = function(workflow, callback){
+        var url = baseUrl+'/workflows/'+workflow;
         $http.get(url).
             success(callback);
     };
@@ -37,7 +37,7 @@ angular.module('poligloMonitorApp')
     // Public API here
     return {
       list: list,
-      listProcesses: listProcesses,
+      listWorkflowInstances: listWorkflowInstances,
       get: get,
     };
     // AngularJS will instantiate a singleton by calling "new" on this function
