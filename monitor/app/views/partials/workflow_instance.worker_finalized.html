@@ -1,8 +1,8 @@
 <ol class="breadcrumb">
-    <li><a ui-sref="process.show({processId: process.id})">{{process.name}}</a></li>
+    <li><a ui-sref="workflowInstance.show({workflowInstanceId: workflowInstance.id})">{{workflowInstance.name}}</a></li>
     <li>{{workerId}} finalized</li>
 </ol>
-<h1>Finalized - {{process.name}} - {{workerId}}</h1>
+<h1>Finalized - {{workflowInstance.name}} - {{workerId}}</h1>
 <div ng-repeat="data in finalized">
     <h3>Data {{$index+1}}</h3>
 

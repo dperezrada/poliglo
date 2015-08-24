@@ -1,8 +1,8 @@
 <ol class="breadcrumb">
-    <li><a ui-sref="process.show({processId: process.id})">{{process.name}}</a></li>
+    <li><a ui-sref="workflowInstance.show({workflowInstanceId: workflowInstance.id})">{{workflowInstance.name}}</a></li>
     <li>{{workerId}} errors</li>
 </ol>
-<h1>Errors - {{process.name}} - {{workerId}}</h1>
+<h1>Errors - {{workflowInstance.name}} - {{workerId}}</h1>
 <div style="margin-bottom: 7px"><button class="btn btn-primary btn" ng-click="retryAllErrors()">Retry all</button></div>
 <div ng-repeat="error in errors">
     <h3>Error: {{error.workers_error[workerId].error}}</h3>

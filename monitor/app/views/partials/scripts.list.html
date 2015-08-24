@@ -1,7 +1,0 @@
-<div ng-repeat="(key, scripts) in scriptGroups">
-    <div>{{key}}</div>
-    <ul>
-        <li ng-repeat="script in scripts"><a ui-sref="scripts.list_processes({scriptType: script.type})">{{script.name}}</a></li>
-    </ul>
-</div>
-<div ui-view></div>

@@ -53,7 +53,7 @@ module.exports = function (grunt) {
         constants: {
           ENV: {
             name: 'production',
-            apiEndpoint: 'http://api.labs.epistemonikos.org'
+            apiEndpoint: process.env.POLIGO_API_URL || 'http://api.labs.epistemonikos.org'
           }
         }
       }
