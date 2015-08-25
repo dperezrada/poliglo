@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
+import re
 import uuid
 import json
 import fnmatch
 import itertools
 import time
 from datetime import datetime
+from copy import copy
 
 from flask import Flask, request, abort, jsonify, Response
 from flask.ext.cors import CORS
@@ -28,15 +30,34 @@ def load_config(path):
         return json.load(open(path))
     return {}
 
+def _replace_sub_on_element(re_matched, worker_id):
+    config_variable = re_matched.groups()[0]
+    return CONFIG.get('all', {}).get(config_variable) or \
+                CONFIG.get(worker_id, {}).get(config_variable)
+
+def _replace_config_variables(workflow):
+    for worker_id, worker in copy(workflow.get('workers', {})).iteritems():
+        worker_raw_data = json.dumps(worker)
+        worker_raw_data = re.sub(
+            r'{{config\.([^}]+)}}',
+            lambda match: _replace_sub_on_element(match, worker_id),
+            worker_raw_data
+        )
+        workflow['workers'][worker_id] = json.loads(worker_raw_data)
+    return workflow
+
+
 def load_workflows(path):
     workflows = []
     if path and os.path.exists(path):
         for root, _, filenames in os.walk(path):
             for filename in fnmatch.filter(filenames, '*.json'):
                 workflow = json.load(open(os.path.join(root, filename)))
-                workflows.append(workflow)
+                workflow = _replace_config_variables(workflow)
                 for worker_id, worker in workflow.get('workers', {}).iteritems():
                     WORKERS_TYPES[worker_id] = worker.get('meta_worker')
+                workflows.append(workflow)
+
     return workflows
 
 
