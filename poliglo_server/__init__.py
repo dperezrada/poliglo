@@ -321,6 +321,12 @@ def get_workflow_instance_stats(workflow_instance_id):
             else:
                 workers_stats[worker][status_type] = worker_num
 
+    for key in connection.keys(workers_prefix+'*:timing'):
+        worker = key.split(workers_prefix)[1].split(':')[0]
+        key_values = [float(x) for x in connection.lrange(key, 0, -1)]
+        workers_stats[worker]['total_time'] = sum(key_values)
+        workers_stats[worker]['average_time'] = workers_stats[worker]['total_time']/len(key_values)
+
     for worker, values in workers_stats.iteritems():
         workers_stats[worker]['pending'] = int(values.get('total', 0)) - int(values.get('done', 0)) - int(values.get('errors', 0)) - int(values.get('discarded', 0))
     return jsonify({'workers': workers_stats})
