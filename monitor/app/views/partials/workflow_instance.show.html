@@ -17,7 +17,7 @@
     </thead>
     <tbody>
         <tr ng-repeat="worker in workers">
-            <td>{{worker}}</td>
+            <td>{{worker}} <br/><span style="margin-left: 20px; color: #AAA">average: {{(workflowInstanceStats.workers[worker].average_time | number:3) || '?'}} sec, total: {{(workflowInstanceStats.workers[worker].total_time | number:3) || '?'}} sec</span></td>
             <td>{{workflowInstanceStats.workers[worker].total || 0}}</td>
             <td>{{workflowInstanceStats.workers[worker].done || 0}}</td>
             <td><a href="#" ui-sref="workflowInstance.workerErrors({workflowInstanceId: workflowInstance.id, workerId: worker})">{{workflowInstanceStats.workers[worker].errors || 0}}</a></td>
