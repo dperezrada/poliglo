@@ -4,7 +4,10 @@
     <li><a ui-sref="workflowInstance.show({workflowInstanceId: workflowInstance.id})">{{workflowInstance.name}}</a></li>
 </ol>
 <h1>{{workflowInstance.name}}</h1>
-<span>Started: {{workflowInstanceStats.start_time_formatted}}</span>
+<div style="color: #AAA;">
+    <p style="margin: 0">Started: {{workflowInstanceStats.start_time_formatted}}</p>
+    <p style="margin: 0">Running time: {{workflowInstanceStats.update_time - workflowInstanceStats.start_time | number:1}} secs</p>
+</div>
 
 <h3>Workers:</h3>
 <table class="table">

@@ -235,7 +235,14 @@ def get_workflow_instance_status(workflow_instance_id):
         status = 'running'
     else:
         status = 'done'
-    return jsonify({'status': status})
+    runned_for = ''
+    if workflow_instance_data.get('start_time') and workflow_instance_data.get('update_time'):
+        try:
+            runned_for = float(workflow_instance_data.get('update_time')) - \
+                float(workflow_instance_data.get('start_time'))
+        except:
+            pass
+    return jsonify({'status': status, 'runned_for': runned_for})
 
 @app.route('/workflow_instances/<workflow_instance_id>/workers/<worker_id>/<string:option>', methods=['GET'])
 def get_workflow_instance_worker_jobs_type(workflow_instance_id, worker_id, option):

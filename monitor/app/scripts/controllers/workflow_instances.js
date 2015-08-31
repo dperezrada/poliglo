@@ -20,7 +20,7 @@ angular.module('poligloMonitorApp')
         });
         var getStatus = function(statusId){
             WorkflowInstance.status(statusId, function(data){
-                $scope.workflowInstanceStatus[statusId] = data.status;
+                $scope.workflowInstanceStatus[statusId] = data;
             });
         };
         var updateWorkflowInstanceStatus = function(){
