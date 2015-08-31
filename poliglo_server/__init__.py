@@ -197,6 +197,8 @@ def get_workflow_instance_status(workflow_instance_id):
     # TODO: support discarded
     connection = get_connection(CONFIG.get('all'))
     workflow_instance_data = _get_workflow_instance(connection, workflow_instance_id)
+    if not workflow_instance_data.get('start_time'):
+        return jsonify({'status': 'pending'})
 
     errors_keys = connection.keys(
         REDIS_KEY_INSTANCE_WORKER_ERRORS % (
@@ -233,7 +235,14 @@ def get_workflow_instance_status(workflow_instance_id):
         status = 'running'
     else:
         status = 'done'
-    return jsonify({'status': status})
+    runned_for = ''
+    if workflow_instance_data.get('start_time') and workflow_instance_data.get('update_time'):
+        try:
+            runned_for = float(workflow_instance_data.get('update_time')) - \
+                float(workflow_instance_data.get('start_time'))
+        except:
+            pass
+    return jsonify({'status': status, 'runned_for': runned_for})
 
 @app.route('/workflow_instances/<workflow_instance_id>/workers/<worker_id>/<string:option>', methods=['GET'])
 def get_workflow_instance_worker_jobs_type(workflow_instance_id, worker_id, option):
@@ -288,7 +297,6 @@ def action_over_worker_job_type(workflow_instance_id, worker_id, option, redis_s
 
 @app.route('/workflow_instances/<workflow_instance_id>/stats', methods=['GET'])
 def get_workflow_instance_stats(workflow_instance_id):
-    # TODO: Refactor this code
     connection = get_connection(CONFIG.get('all'))
     workflow_instance_data = _get_workflow_instance(connection, workflow_instance_id)
 
@@ -321,9 +329,21 @@ def get_workflow_instance_stats(workflow_instance_id):
             else:
                 workers_stats[worker][status_type] = worker_num
 
+    for key in connection.keys(workers_prefix+'*:timing'):
+        worker = key.split(workers_prefix)[1].split(':')[0]
+        key_values = [float(x) for x in connection.lrange(key, 0, -1)]
+        workers_stats[worker]['total_time'] = sum(key_values)
+        workers_stats[worker]['average_time'] = workers_stats[worker]['total_time']/len(key_values)
+
     for worker, values in workers_stats.iteritems():
-        workers_stats[worker]['pending'] = int(values.get('total', 0)) - int(values.get('done', 0)) - int(values.get('errors', 0)) - int(values.get('discarded', 0))
-    return jsonify({'workers': workers_stats})
+        workers_stats[worker]['pending'] = int(values.get('total', 0)) - int(
+            values.get('done', 0)) - int(values.get('errors', 0)) - int(values.get('discarded', 0))
+    return jsonify({
+        'workers': workers_stats,
+        'start_time': workflow_instance_data.get('start_time'),
+        'creation_time': workflow_instance_data.get('creation_time'),
+        'update_time': workflow_instance_data.get('update_time')
+    })
 
 
 def _find_last_worker_id(workflow, next_worker_id):
