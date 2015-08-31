@@ -4,6 +4,10 @@
     <li><a ui-sref="workflowInstance.show({workflowInstanceId: workflowInstance.id})">{{workflowInstance.name}}</a></li>
 </ol>
 <h1>{{workflowInstance.name}}</h1>
+<div style="color: #AAA;">
+    <p style="margin: 0">Started: {{workflowInstanceStats.start_time_formatted}}</p>
+    <p style="margin: 0">Running time: {{workflowInstanceStats.update_time - workflowInstanceStats.start_time | number:1}} secs</p>
+</div>
 
 <h3>Workers:</h3>
 <table class="table">
@@ -17,7 +21,7 @@
     </thead>
     <tbody>
         <tr ng-repeat="worker in workers">
-            <td>{{worker}}</td>
+            <td>{{worker}} <br/><span style="margin-left: 20px; color: #AAA">average: {{(workflowInstanceStats.workers[worker].average_time | number:3) || '?'}} sec, total: {{(workflowInstanceStats.workers[worker].total_time | number:3) || '?'}} sec</span></td>
             <td>{{workflowInstanceStats.workers[worker].total || 0}}</td>
             <td>{{workflowInstanceStats.workers[worker].done || 0}}</td>
             <td><a href="#" ui-sref="workflowInstance.workerErrors({workflowInstanceId: workflowInstance.id, workerId: worker})">{{workflowInstanceStats.workers[worker].errors || 0}}</a></td>
