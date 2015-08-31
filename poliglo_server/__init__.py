@@ -197,6 +197,8 @@ def get_workflow_instance_status(workflow_instance_id):
     # TODO: support discarded
     connection = get_connection(CONFIG.get('all'))
     workflow_instance_data = _get_workflow_instance(connection, workflow_instance_id)
+    if not workflow_instance_data.get('start_time'):
+        return jsonify({'status': 'pending'})
 
     errors_keys = connection.keys(
         REDIS_KEY_INSTANCE_WORKER_ERRORS % (
@@ -288,7 +290,6 @@ def action_over_worker_job_type(workflow_instance_id, worker_id, option, redis_s
 
 @app.route('/workflow_instances/<workflow_instance_id>/stats', methods=['GET'])
 def get_workflow_instance_stats(workflow_instance_id):
-    # TODO: Refactor this code
     connection = get_connection(CONFIG.get('all'))
     workflow_instance_data = _get_workflow_instance(connection, workflow_instance_id)
 
@@ -328,8 +329,14 @@ def get_workflow_instance_stats(workflow_instance_id):
         workers_stats[worker]['average_time'] = workers_stats[worker]['total_time']/len(key_values)
 
     for worker, values in workers_stats.iteritems():
-        workers_stats[worker]['pending'] = int(values.get('total', 0)) - int(values.get('done', 0)) - int(values.get('errors', 0)) - int(values.get('discarded', 0))
-    return jsonify({'workers': workers_stats})
+        workers_stats[worker]['pending'] = int(values.get('total', 0)) - int(
+            values.get('done', 0)) - int(values.get('errors', 0)) - int(values.get('discarded', 0))
+    return jsonify({
+        'workers': workers_stats,
+        'start_time': workflow_instance_data.get('start_time'),
+        'creation_time': workflow_instance_data.get('creation_time'),
+        'update_time': workflow_instance_data.get('update_time')
+    })
 
 
 def _find_last_worker_id(workflow, next_worker_id):

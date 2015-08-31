@@ -25,7 +25,7 @@ angular.module('poligloMonitorApp')
         };
         var updateWorkflowInstanceStatus = function(){
             for (var i = 0; i < $scope.workflowInstances.length; i++) {
-                $scope.workflowInstances[i].start_time_formatted = window.moment($scope.workflowInstances[i].start_time*1000).fromNow();
+                $scope.workflowInstances[i].creation_time_formatted = window.moment($scope.workflowInstances[i].creation_time*1000).fromNow();
                 getStatus($scope.workflowInstances[i].id);
 
             }
@@ -93,6 +93,13 @@ angular.module('poligloMonitorApp')
         var updateStats = function(){
             WorkflowInstance.stats($stateParams.workflowInstanceId, function(data){
                 $scope.workflowInstanceStats = data;
+                if($scope.workflowInstanceStats.start_time){
+                    $scope.workflowInstanceStats.start_time_formatted = window.moment(
+                        $scope.workflowInstanceStats.start_time*1000
+                    ).fromNow();
+                }else{
+                    $scope.workflowInstanceStats.start_time_formatted = 'pending';
+                }
             });
         };
 
