@@ -212,7 +212,7 @@ class TestPoligloServer(unittest.TestCase):
         workflow_instance = json_loads(response.data)
         self.assertEqual('Script 1 - 1', workflow_instance.get('name'))
 
-    def test_get_workflow_instance_status_running(self):
+    def test_get_workflow_instance_status_pending(self):
         response = self.app.post(
             '/workflows/workflow_1/workflow_instances', data=to_json({'name': 'Script 1 - 1'}),
             headers={'content-type':'application/json'}
@@ -220,7 +220,7 @@ class TestPoligloServer(unittest.TestCase):
         workflow_instance_id = json_loads(response.data).get('id')
         response = self.app.get('/workflow_instances/'+workflow_instance_id+'/status')
         workflow_instance = json_loads(response.data)
-        self.assertEqual('running', workflow_instance.get('status'))
+        self.assertEqual('pending', workflow_instance.get('status'))
 
     @unittest.skip("Missing implementation")
     def test_get_workflow_instance_status_done(self):
