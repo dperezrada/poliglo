@@ -4,10 +4,11 @@ python:
 services:
   - redis-server
 install:
+  - cd backend
   - pip install flask
-  - cd backend && python setup.py install
+  - python setup.py install
   - pip install coveralls
 script:
-  - cd backend && coverage run --source=poliglo_server setup.py test
+  - coverage run --source=poliglo_server setup.py test
 after_success:
-  - cd backend && coveralls
+  - coveralls
