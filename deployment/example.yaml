@@ -1,0 +1,15 @@
+ssh_user: ubuntu
+deploy_user: deploy
+hosts: ['your_server_ip1',]
+deploy_path: /var/www/poliglo
+envs_path: /home/deploy/envs
+poliglo_config_path: /Users/dperezrada/Programming/opensource/poliglo/examples/numbers/config.json
+poliglo_workflow_paths: ['/Users/dperezrada/Programming/opensource/poliglo/examples/numbers/workflows']
+poliglo_worker_paths: ['/Users/dperezrada/Programming/opensource/poliglo/examples/numbers/workers']
+monitor_local_path: /Users/dperezrada/Programming/opensource/poliglo/monitor
+poliglo_custom_path: /var/www/poliglo-custom
+supervisor_logs_path: /var/log/supervisor
+tmp_path: /tmp
+local_tmp_path: /tmp
+poliglo_monitor_domain: your_monitor_domain
+poliglo_api_domain: your_epistemonikos_domain

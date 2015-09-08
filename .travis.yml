@@ -4,6 +4,7 @@ python:
 services:
   - redis-server
 install:
+  - cd backend
   - pip install flask
   - python setup.py install
   - pip install coveralls
