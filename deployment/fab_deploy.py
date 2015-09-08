@@ -40,7 +40,7 @@ def setup_supervisor_poliglo():
     create_dir(target_dir, env.deploy_user)
     supervisor_text = """[program:poliglo_server]
 command=%s/python %s/poliglo/backend/poliglo_server/__init__.py
-environment=POLIGLO_SERVER_URL=http://127.0.0.1:9015,CONFIG_PATH=%s/configs/config.conf,WORKFLOWS_PATH=%s
+environment=POLIGLO_SERVER_URL=http://127.0.0.1:9015,CONFIG_PATH=%s/config.conf,WORKFLOWS_PATH=%s
 stdout_logfile = %s/poliglo_server.log
 stderr_logfile = %s/poliglo_server.err
 """ % (env.python_bin, env.deploy_path, env.poliglo_custom_path, target_dir, \
@@ -54,17 +54,30 @@ stderr_logfile = %s/poliglo_server.err
 def create_workers_dir():
     workers_target_dir = "%s/workers/" % env.poliglo_custom_path
     create_dir(workers_target_dir, env.deploy_user)
-    return [workers_target_dir,]
+    return workers_target_dir
+
+def upload_scripts():
+    scripts_path = os.path.join(env.poliglo_custom_path, 'scripts')
+    create_dir(scripts_path, env.deploy_user)
+    upload_file(
+        "%s/scripts/*" % env.current_local_dir,
+        scripts_path,
+        user=env.deploy_user
+    )
+    sudo('chmod a+x %s/*.sh' % scripts_path)
 
 def setup_supervisor_workers():
-    workers_directories = create_workers_dir()
-    for workers_dir in workers_directories:
+    workers_directory = create_workers_dir()
+    for worker_dir in env.poliglo_worker_paths:
+        # TODO improve the copy of these files
         upload_file(
-            os.path.join(env.target_local_path, 'workers/*'), workers_dir, user=env.deploy_user
+            worker_dir, workers_directory, user=env.deploy_user
         )
-    start_workers_script_path = '%s/poliglo-base/workers/start_workers.sh' % env.deploy_path
-    sudo('chmod a+x %s' % start_workers_script_path)
-    sudo("exec_paths_py=%s SUPERVISOR_LOG_PATH=/var/log/supervisor SUPERVISOR_FILE=/tmp/workers_file_tmp CREATE_SUPERVISOR=1 WORKERS_PATHS=%s POLIGLO_SERVER_URL=http://127.0.0.1:9015 %s" % (env.python, ":".join(workers_directories), start_workers_script_path), user=env.deploy_user)
+    start_workers_script_path = '%s/scripts/start_workers.sh' % env.poliglo_custom_path
+    print "exec_paths_py=%s SUPERVISOR_LOG_PATH=/var/log/supervisor SUPERVISOR_FILE=/tmp/workers_file_tmp CREATE_SUPERVISOR=1 WORKERS_PATHS=%s POLIGLO_SERVER_URL=http://127.0.0.1:9015 %s" % (env.python, workers_directory, start_workers_script_path)
+    sudo(
+        "exec_paths_py=%s SUPERVISOR_LOG_PATH=/var/log/supervisor SUPERVISOR_FILE=/tmp/workers_file_tmp CREATE_SUPERVISOR=1 WORKERS_PATHS=%s POLIGLO_SERVER_URL=http://127.0.0.1:9015 %s" % (env.python, workers_directory, start_workers_script_path), user=env.deploy_user
+    )
     sudo('mv /tmp/workers_file_tmp /etc/supervisor/conf.d/poliglo_workers.conf')
 
 
@@ -77,26 +90,23 @@ def restart_supervisor():
 
 
 def update_poliglo_config():
-    create_dir('%s/configs' % env.poliglo_custom_path, env.deploy_user)
+    create_dir(env.poliglo_custom_path, env.deploy_user)
     upload_file(
-        os.path.join(env.target_local_path, 'configs/config.production.conf'),
-        '%s/configs/config.conf' % env.poliglo_custom_path,
+        env.poliglo_config_path,
+        '%s/config.conf' % env.poliglo_custom_path,
         user=env.deploy_user
     )
-
 
 def update_poliglo_workflows():
     target = '%s/workflows' % env.poliglo_custom_path
     create_dir(target, env.deploy_user)
-    # if target:
-    #     sudo('rm "%s"/*' % target)
-    upload_file(os.path.join(env.target_local_path, 'workflows/*'), target, user=env.deploy_user)
+    for workflow_path in env.poliglo_workflow_paths or []:
+        upload_file("%s/*" % workflow_path, target, user=env.deploy_user)
 
 def install_workers_dependencies():
-    install_script_path = '%s/workers/install_workers_dependencies.sh' \
+    install_script_path = '%s/scripts/install_workers_dependencies.sh' \
         % env.poliglo_custom_path
-    sudo('chmod a+x %s' % install_script_path)
-    workers_directories = create_workers_dir()
+    workers_directories = [create_workers_dir(), ]
     sudo("PY_BIN_PATH=%s WORKERS_PATHS=%s %s" % (
             env.python_bin, ":".join(workers_directories), install_script_path
         ), user=env.deploy_user
@@ -111,11 +121,28 @@ def rm_supervisor_config():
 
 # Upload monitor
 def generate_monitor_dist():
-    local('cd %s && POLIGO_API_URL=%s grunt build' % (env.monitor_local_path, env.api_url))
+    local(
+        'cd %s && npm install -d' % (
+            env.monitor_local_path
+        )
+    )
+    local(
+        'cd %s && bower install -d' % (
+            env.monitor_local_path
+        )
+    )
+    local(
+        'cd %s && POLIGO_API_URL=http://%s grunt build' % (
+            env.monitor_local_path, env.poliglo_api_domain
+        )
+    )
     upload_file('%s/dist/' % env.monitor_local_path, '%s/' % env.deploy_path, user=env.deploy_user)
     monitor_path = '%s/monitor' % env.deploy_path
     if exists(monitor_path):
-        sudo('mv %s/monitor %s/monitor.old' % (env.deploy_path, env.deploy_path), user=env.deploy_user)
+        sudo(
+            'mv %s/monitor %s/monitor.old' % (env.deploy_path, env.deploy_path),
+            user=env.deploy_user
+        )
     sudo('mv %s/dist %s/monitor' % (env.deploy_path, env.deploy_path), user=env.deploy_user)
     if exists(monitor_path+'.old'):
         sudo('rm -rf %s/monitor.old' % env.deploy_path)
@@ -149,8 +176,9 @@ def update_workers():
     setup_supervisor_poliglo()
     restart_supervisor()
     sleep(10)
+    upload_scripts()
     setup_supervisor_workers()
-    # install_workers_dependencies()
+    install_workers_dependencies()
     restart_supervisor()
 
 def update_monitor():

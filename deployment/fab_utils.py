@@ -26,28 +26,33 @@ def stage(stage_name='staging'):
     # TODO: refactor this, read all variables
     puts("env.stage = %s" % stage_name, show_prefix=True)
     env.stage = stage_name
+    env.current_local_dir = os.path.dirname(os.path.abspath(__file__))
+
+    env.config_file = os.path.join(env.current_local_dir, "%s.yaml" % stage_name)
+    env.config_data = load_config_from_yaml(open(env.config_file), yaml.SafeLoader)
+
     env.hosts = env.config_data['hosts']
     env.user = env.config_data['ssh_user']
     env.deploy_user = env.config_data['deploy_user']
     # quitar home
     env.deploy_path = env.config_data['deploy_path']
-    env.target_local_path = env.config_data['target_local_path']
     env.monitor_local_path = env.config_data['monitor_local_path']
-    env.api_url = env.config_data['api_url']
     env.poliglo_custom_path = env.config_data['poliglo_custom_path']
     env.envs_path = env.config_data['envs_path']
     env.local_tmp_path = env.config_data['local_tmp_path']
     env.poliglo_monitor_domain = env.config_data['poliglo_monitor_domain']
     env.poliglo_api_domain = env.config_data['poliglo_api_domain']
+    env.poliglo_config_path = env.config_data['poliglo_config_path']
+    env.poliglo_workflow_paths = env.config_data['poliglo_workflow_paths']
+    env.supervisor_logs_path = env.config_data['supervisor_logs_path']
+    env.poliglo_worker_paths = env.config_data['poliglo_worker_paths']
 
     general_config()
-    env.config_file = os.path.join(env.current_local_dir, "%s.yaml" % stage_name)
-    env.config_data = load_config_from_yaml(open(env.config_file), yaml.SafeLoader)
+
 
 def general_config():
     env.use_ssh_config = True
     env.deploy_path = '/var/www'
-    env.current_local_dir = os.path.dirname(os.path.abspath(__file__))
 
     env.python_envs_path = '%s/python' % env.envs_path
     env.python_env = 'pydev'
@@ -81,7 +86,7 @@ def upload_text_to_file(text, target=None, user=None, local_tmp_path='/tmp'):
 def up_repos(target_path, repositories, user):
     print yellow('Downloading repositories')
     if not exists(target_path):
-        create_dir(target_path)
+        create_dir(target_path, user)
     for repo in repositories:
         print cyan(repo['name'])
         update_repo(repo, target_path, user)

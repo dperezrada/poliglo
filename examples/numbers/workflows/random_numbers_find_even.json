@@ -1,0 +1,26 @@
+{
+    "id": "random_numbers_find_even",
+    "name": "Random numbers find even",
+    "start_worker_id": "create_random_number_1",
+    "workers": {
+        "create_random_number_1": {
+            "meta_worker": "create_random_number",
+            "default_inputs": {
+                "how_many_to_create": 100,
+                "numbers_range": [0, 5000]
+            },
+            "next_workers": ["find_even_1"]
+        },
+        "find_even_1": {
+            "meta_worker": "find_even",
+            "next_workers": ["write_numbers_to_file_1"]
+        },
+        "write_numbers_to_file_1": {
+            "meta_worker": "write_numbers_to_file",
+            "default_inputs": {
+                "numbers_filepath": "/tmp/poliglo_example_numbers.txt"
+            },
+            "next_workers": []
+        }
+    }
+}
