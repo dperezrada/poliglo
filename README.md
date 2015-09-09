@@ -1,5 +1,7 @@
 Poliglo
 =======
+[![Build Status](https://travis-ci.org/dperezrada/poliglo.svg?branch=master)](https://travis-ci.org/dperezrada/poliglo)
+
 
 WARNING: As this is likely to change a lot in the short term, is not recommended for production yet.
 
