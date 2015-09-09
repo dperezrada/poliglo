@@ -1,97 +1,73 @@
 Poliglo
 =======
+[![Build Status](https://travis-ci.org/dperezrada/poliglo.svg?branch=master)](https://travis-ci.org/dperezrada/poliglo)
 
 
-## Server (mastermind)
+WARNING: As this is likely to change a lot in the short term, is not recommended for production yet.
 
-### Install
+## Why poliglo?
+Today there are a lot of programming languages, and some of them are pretty good for certain tasks.
+But generally, use them together is painful, specially if you want they to talk one to another.
+## What is Poliglo?
+Is a simple way to create small piece of code (worker) in some programming language and connect it with another worker maybe in another language. So you could do something like this:
 
-	pip install -r requirements.txt
+    worker(js) -> worker(py) -> worker(java)
+
+## Features
++ Easily connect programming languages
++ Web interface to monitor what is happening
+
+## Install Requirements
+ * Redis
+ * Python
+ * npm (Node package manager)
+
+## Install
+    python backend/setup.py develop
+    cd monitor
+    npm install -d
+    bower install -d
+    cd ..
 
 
-### Start
+## Run the example
+### Numbers
+This example is located in
+    examples/numbers
 
-	CONFIG_PATH=<absolute_path>/config.conf \
-	SCRIPTS_PATH=<absolute_path>/scripts:<absolute_path>/scripts_other \
-	python master_mind.py
+This workflow example user 3 workers:
++ create_random_number
++ find_even
++ write_numbers_to_file
 
-To start the mastermind we need to provide the config file and the paths to scripts
+#### Start the server
+    CONFIG_PATH=./examples/numbers/config.json \
+        WORKFLOWS_PATH=./examples/numbers/workflows \
+        python backend/poliglo_server/__init__.py
+#### Poliglo monitor
+    cd monitor && grunt serve
 
-##### CONFIG_PATH
-Example file:
+#### Run the workers
+    POLIGLO_SERVER_URL=localhost:9015 \
+        WORKERS_PATHS=./examples/numbers/workers./deployment/scripts/ \
+        SUPERVISOR_LOG_PATH="/tmp/poliglo_supervisor_logs" \
+        start_workers.sh
 
-```json
-{
-    "all": {
-        "REDIS_HOST": "127.0.0.1",
-        "REDIS_PORT": 6379,
-        "REDIS_DB": 0,
-        "POLIGLO_SERVER_URL": "http://localhost:9015"
-    },
-    "upload_file_s3": {
-        "S3_ACCESS_KEY": "XXXX",
-        "S3_SECRET_KEY": "XXX"
-    }
-}
-```
+If there is any problem checkout the logs in $SUPERVISOR_LOG_PATH
 
-Where the keys of the file are the name of the worker (or "all" to affect all workers). So with "upload_file_s3" we are giving a specific configuration for the worker "upload_file_s3"
+#### Start a workflow instance
+    python examples/start_a_workflow_instance.py
 
-##### SCRIPTS_PATH
+And take a look to the monitor to see it running (http://localhost:9000).
+If there is any error, press over the error column number. See the error, try to fix it, restart the server and the workers, and press the retry button.
 
-Path separeted by : this paths should contains files starting with script_
+If its done cat the file to see the result:
+cat /tmp/poliglo_example_numbers.txt
 
-Example script file:
+Did you notice that in the file there was less numbers than the initials once. Thats because the find_even worker is filtering the numbers that are not even.
 
-    {
-        "id": "crawl_parcelas",
-        "name": "Crawl parcelas",
-        "start_worker": "crawl_list_of_elements",
-        "group": "personal",
-        "workers": {
-            "crawl_list_of_elements": {
-                "default_inputs": {
-                    "url": "http://www.yapo.cl/ohiggins/todos_los_avisos?ca=7_s&l=0&q=hectarea&w=1",
-                    "next_page_selector": "//div[@class='resultcontainer']//a[contains(text(), 'Próxima página')]/@href",
-                    "element_selector": "tr.listing_thumbs",
-                    "extract_data": {
-                        "image": ".link_image img@src",
-                        "price": ".price",
-                        "category": ".category",
-                        "region": ".region",
-                        "sector": ".commune",
-                        "name": "a.title",
-                        "url": "a.title@href"
-                    }
-                },
-                "outputs": ["filter_prop"]
-            },
-            "filter_prop": {
-                "default_inputs": {
-                    "min_price": 0,
-                    "max_price": 50000000
-                },
-                "outputs": ["wait_jobs"]
-            },
-            "wait_jobs": {
-                "default_inputs": {
-                    "wait_jobs_from": ["crawl_list_of_elements", "filter_prop"]
-                },
-                "outputs": ["write_queue_to_file"]
-            },
-            "write_queue_to_file": {
-                "default_inputs": {
-                    "target_file": "/tmp/datos.json"
-                },
-                "outputs": ["upload_file_s3"]
-            },
-            "upload_file_s3": {
-                "default_inputs": {
-                    "file_to_upload": "/tmp/datos.json",
-                    "target_filename": "parcelas.json",
-                    "target_bucket": "poliglo",
-                    "read_option": "r"
-                }
-            }
-        }
-    }
+
+
+
+
+
