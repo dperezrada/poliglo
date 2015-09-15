@@ -11,8 +11,12 @@ from copy import copy
 
 from flask import Flask, request, abort, jsonify, Response
 from flask.ext.cors import CORS
-from poliglo import get_connection, add_data_to_next_worker, start_workflow_instance
-from poliglo import REDIS_KEY_INSTANCE_WORKER_FINALIZED_JOBS, REDIS_KEY_INSTANCE_WORKER_DISCARDED, REDIS_KEY_INSTANCE_WORKER_JOBS, REDIS_KEY_INSTANCE_WORKER_ERRORS
+from poliglo.preparation import get_connection
+from poliglo.start import start_workflow_instance
+from poliglo.outputs import add_data_to_next_worker
+from poliglo.variables import REDIS_KEY_INSTANCE_WORKER_FINALIZED_JOBS, \
+    REDIS_KEY_INSTANCE_WORKER_DISCARDED, REDIS_KEY_INSTANCE_WORKER_JOBS, \
+    REDIS_KEY_INSTANCE_WORKER_ERRORS
 from poliglo.utils import to_json, json_loads
 
 from tornado.wsgi import WSGIContainer

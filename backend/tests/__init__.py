@@ -118,7 +118,7 @@ class TestPoligloServer(unittest.TestCase):
         cls.app = poliglo_server.app.test_client()
 
     def setUp(self):
-        self.connection = poliglo.get_connection(CONFIG.get('all'))
+        self.connection = poliglo.preparation.get_connection(CONFIG.get('all'))
         self.connection.flushall()
 
     def tearDown(self):
