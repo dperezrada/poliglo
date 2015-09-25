@@ -16,12 +16,12 @@ Is a simple way to create small piece of code (worker) in some programming langu
 ## Features
 + Easily connect programming languages
 + Web interface to monitor what is happening
-
-## Limitations
 + Supported programming languages:
     * [Python](https://github.com/dperezrada/poliglo-py "Poliglo-py")
     * [Node](https://github.com/dperezrada/poliglo-js "Poliglo-js")
     * More to come soon
+
+## Limitations
 + Not safe fail of workers, may lose some jobs if worker die.
     * The solution is designed, but haven't implemented yet
 
