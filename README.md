@@ -16,11 +16,12 @@ Is a simple way to create small piece of code (worker) in some programming langu
 ## Features
 + Easily connect programming languages
 + Web interface to monitor what is happening
-
-## Limitations
 + Supported programming languages:
     * [Python](https://github.com/dperezrada/poliglo-py "Poliglo-py")
+    * [Node](https://github.com/dperezrada/poliglo-js "Poliglo-js")
     * More to come soon
+
+## Limitations
 + Not safe fail of workers, may lose some jobs if worker die.
     * The solution is designed, but haven't implemented yet
 
@@ -56,9 +57,9 @@ This workflow example user 3 workers:
 
 #### Run the workers
     POLIGLO_SERVER_URL=localhost:9015 \
-        WORKERS_PATHS=./examples/numbers/workers./deployment/scripts/ \
+        WORKERS_PATHS=./examples/numbers/workers/ \
         SUPERVISOR_LOG_PATH="/tmp/poliglo_supervisor_logs" \
-        start_workers.sh
+        deployment/scripts/start_workers.sh
 
 If there is any problem checkout the logs in $SUPERVISOR_LOG_PATH
 

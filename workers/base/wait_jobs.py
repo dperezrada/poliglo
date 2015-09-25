@@ -4,6 +4,8 @@
 #req:
 #end req
 
+# TODO: this should have a finalized queue that takes into account the waiting ellements for this instance only
+
 import os
 import uuid
 from datetime import datetime
@@ -12,21 +14,17 @@ import hashlib
 from time import time
 
 import poliglo
-from poliglo.utils import to_json
-
-POLIGLO_SERVER_URL = os.environ.get('POLIGLO_SERVER_URL')
-META_WORKER = 'wait_jobs'
 
 def check_if_waiting_is_done(connection, workflow_id, workflow_instance_id, waiting_workers_ids):
     total_jobs_keys = [
-        poliglo.REDIS_KEY_INSTANCE_WORKER_JOBS % (
+        poliglo.variables.REDIS_KEY_INSTANCE_WORKER_JOBS % (
             workflow_id, workflow_instance_id, wait_jobs_from, 'total'
         )
         for wait_jobs_from in waiting_workers_ids
     ]
 
     done_jobs_keys = [
-        poliglo.REDIS_KEY_INSTANCE_WORKER_JOBS % (
+        poliglo.variables.REDIS_KEY_INSTANCE_WORKER_JOBS % (
             workflow_id, workflow_instance_id, wait_jobs_from, 'done'
         )
         for wait_jobs_from in waiting_workers_ids
@@ -57,13 +55,13 @@ def get_waiting_queue_name(workflow_instance_id, worker_id, wait_jobs_from):
     )
 
 def process(specific_info, data, *args):
-    inputs = poliglo.get_inputs(data, specific_info)
+    inputs = poliglo.inputs.get_inputs(data, specific_info)
     connection = args[0].get('connection')
 
     waiting_queue_name = get_waiting_queue_name(
         data['workflow_instance']['id'], data['workflow_instance']['worker_id'], inputs['wait_jobs_from']
     )
-    connection.zadd(waiting_queue_name, time(), to_json(data))
+    connection.zadd(waiting_queue_name, time(), poliglo.utils.to_json(data))
     return []
 
 def get_waiting_workers(worker_workflows):
@@ -88,13 +86,16 @@ def wait_is_done(connection, worker_workflows, workflow_id, workflow_instance_id
     for i, output_worker_id in enumerate(worker.get('next_workers', [])):
         output_worker_type = worker.get('__next_workers_types', [])[i]
         data = {'__read_from_queue': waiting_queue_name}
-        poliglo.start_workflow_instance(
+        poliglo.start.start_workflow_instance(
             connection, workflow_id, output_worker_type,
             output_worker_id, workflow_instance_name, data
         )
 
 def main():
-    worker_workflows, connection = poliglo.prepare_worker(POLIGLO_SERVER_URL, META_WORKER)
+    meta_worker = os.path.splitext(os.path.basename(__file__))[0]
+    worker_workflows, connection = poliglo.preparation.prepare_worker(
+        os.environ.get('POLIGLO_SERVER_URL'), meta_worker
+    )
     workflow_waiting_workers, all_waiting_workers = get_waiting_workers(worker_workflows)
     # TODO: Move to redis
     already_done_signatures = []
@@ -104,42 +105,69 @@ def main():
     timeout_finalized = 1
     while True:
         if not found_wait:
+            review_instances = {}
             queue_message = connection.brpop(
-                [poliglo.REDIS_KEY_QUEUE_FINALIZED,], timeout_finalized
+                [poliglo.variables.REDIS_KEY_QUEUE_FINALIZED,], timeout_finalized
             )
-        if queue_message is not None:
-            found_finalized = True
-            finalized_data = json.loads(queue_message[1])
-            if finalized_data['worker_id'] not in all_waiting_workers:
-                continue
-            workflow_id = finalized_data['workflow']
-            workflow_instance_id = finalized_data['workflow_instance_id']
-            workflow_instance_name = finalized_data['workflow_instance_name']
-            for worker_id, waiting_workers_ids in workflow_waiting_workers[workflow_id].iteritems():
-                status_done, done_signature = check_if_waiting_is_done(
-                    connection, workflow_id, workflow_instance_id, waiting_workers_ids
-                )
-                if status_done:
-                    if done_signature not in already_done_signatures:
-                        already_done_signatures.append(done_signature)
-                        wait_is_done(
-                            connection, worker_workflows, workflow_id, workflow_instance_id,
-                            workflow_instance_name, worker_id, waiting_workers_ids
-                        )
-        else:
-            found_finalized = False
-        if not found_finalized:
-            queue_message = connection.brpop([poliglo.REDIS_KEY_QUEUE % META_WORKER,], timeout_wait)
+
+
             if queue_message is not None:
-                poliglo.default_main_inside(
+                queue_message_llen = connection.llen(
+                    poliglo.variables.REDIS_KEY_QUEUE_FINALIZED
+                )
+                while True:
+                    if queue_message:
+                        finalized_data = json.loads(queue_message[1])
+                        workflow_instance_id = finalized_data['workflow_instance_id']
+                        if not review_instances.get(workflow_instance_id):
+                            review_instances[workflow_instance_id] = {
+                                'workflow_id': finalized_data['workflow'],
+                                'workflow_instance_name': finalized_data['workflow_instance_name']
+                            }
+                        queue_message = None
+                    if queue_message_llen > 2:
+                        queue_message = [
+                            poliglo.variables.REDIS_KEY_QUEUE_FINALIZED,
+                            connection.rpop(poliglo.variables.REDIS_KEY_QUEUE_FINALIZED)
+                        ]
+                        queue_message_llen -= 1
+                    else:
+                        queue_message_llen = connection.llen(
+                            poliglo.variables.REDIS_KEY_QUEUE_FINALIZED
+                        )
+                        if queue_message_llen <= 2:
+                            break
+
+                found_finalized = True
+                if finalized_data['worker_id'] not in all_waiting_workers:
+                    queue_message = None
+                    continue
+                for workflow_instance_id, review_instance_data in review_instances.iteritems():
+                    workflow_id = review_instance_data['workflow_id']
+                    workflow_instance_name = review_instance_data['workflow_instance_name']
+                    for worker_id, waiting_workers_ids in workflow_waiting_workers[workflow_id].iteritems():
+                        status_done, done_signature = check_if_waiting_is_done(
+                            connection, workflow_id, workflow_instance_id, waiting_workers_ids
+                        )
+                        if status_done:
+                            if done_signature not in already_done_signatures:
+                                already_done_signatures.append(done_signature)
+                                wait_is_done(
+                                    connection, worker_workflows, workflow_id, workflow_instance_id,
+                                    workflow_instance_name, worker_id, waiting_workers_ids
+                                )
+            else:
+                found_finalized = False
+        if not found_finalized:
+            queue_message = connection.brpop([poliglo.variables.REDIS_KEY_QUEUE % meta_worker,], timeout_wait)
+            if queue_message is not None:
+                poliglo.runner.default_main_inside(
                     connection, worker_workflows, queue_message, process, {'connection': connection}
                 )
                 found_wait = True
             else:
                 found_wait = False
         queue_message = None
-
-
 
 
 if __name__ == '__main__':
@@ -153,8 +181,6 @@ from unittest import TestCase
 from shutil import copyfile
 from time import sleep
 
-from poliglo import start_workflow_instance
-
 class TestWaitJobs(TestCase):
     @classmethod
     def _setup_config(cls):
@@ -167,7 +193,7 @@ class TestWaitJobs(TestCase):
             }
         }
         cls.config_path = "/tmp/config.json"
-        open(cls.config_path, 'w').write(to_json(cls.config))
+        open(cls.config_path, 'w').write(poliglo.utils.to_json(cls.config))
 
     @classmethod
     def _setup_workflow(cls):
@@ -208,7 +234,9 @@ class TestWaitJobs(TestCase):
         cls.workflow_path = "/tmp/wait_jobs_test_workflows"
         if not os.path.exists(cls.workflow_path):
             os.makedirs(cls.workflow_path)
-        open(cls.workflow_path+"/workflow_test_wait_jobs.json", 'w').write(to_json(workflow))
+        open(cls.workflow_path+"/workflow_test_wait_jobs.json", 'w').write(
+            poliglo.utils.to_json(workflow)
+        )
 
 
     @classmethod
@@ -240,7 +268,7 @@ POLIGLO_SERVER_URL = os.environ.get('POLIGLO_SERVER_URL')
 META_WORKER = 'generate_numbers'
 
 def process(specific_info, data, *args):
-    inputs = poliglo.get_inputs(data, specific_info)
+    inputs = poliglo.inputs.get_inputs(data, specific_info)
     numbers_range = inputs.get('numbers_range')
     sleep_time = inputs.get('sleep')
 
@@ -248,7 +276,7 @@ def process(specific_info, data, *args):
         time.sleep(sleep_time)
         yield {'number': i}
 
-poliglo.default_main(POLIGLO_SERVER_URL, META_WORKER, process)
+poliglo.runner.default_main(POLIGLO_SERVER_URL, META_WORKER, process)
 """)
 
         #WORKER filter
@@ -260,13 +288,13 @@ POLIGLO_SERVER_URL = os.environ.get('POLIGLO_SERVER_URL')
 META_WORKER = 'filter'
 
 def process(specific_info, data, *args):
-    inputs = poliglo.get_inputs(data, specific_info)
+    inputs = poliglo.inputs.get_inputs(data, specific_info)
     min_value = inputs.get("min")
     if inputs['number'] < min_value:
         return [inputs,]
     return []
 
-poliglo.default_main(POLIGLO_SERVER_URL, META_WORKER, process)
+poliglo.runner.default_main(POLIGLO_SERVER_URL, META_WORKER, process)
 """)
 
         #WORKER wait_jobs
@@ -283,7 +311,7 @@ META_WORKER = 'count_numbers'
 def process(specific_info, data, *args):
     connection = args[0].get('connection')
 
-    inputs = poliglo.get_inputs(data, specific_info)
+    inputs = poliglo.inputs.get_inputs(data, specific_info)
     queue = inputs.get('__read_from_queue')
 
     total = 0
@@ -291,9 +319,9 @@ def process(specific_info, data, *args):
         total +=1
     return [{'total': total}]
 
-config = poliglo.get_config(POLIGLO_SERVER_URL, 'all')
-connection = poliglo.get_connection(config)
-poliglo.default_main(POLIGLO_SERVER_URL, META_WORKER, process, {'connection': connection})
+config = poliglo.preparation.get_config(POLIGLO_SERVER_URL, 'all')
+connection = poliglo.preparation.get_connection(config)
+poliglo.runner.default_main(POLIGLO_SERVER_URL, META_WORKER, process, {'connection': connection})
 """)
 
     @classmethod
@@ -303,13 +331,16 @@ poliglo.default_main(POLIGLO_SERVER_URL, META_WORKER, process, {'connection': co
         isolated_env['WORKERS_PATHS'] = cls.workers_path
         isolated_env['POLIGLO_SERVER_URL'] = cls.config.get('all').get('POLIGLO_SERVER_URL')
         isolated_env['DEPLOY_USER'] = 'test_user'
-        project_dir = os.path.abspath(
+        scripts_dir = os.path.abspath(
             os.path.join(
                 os.path.dirname(__file__),
-                '..'
+                '..',
+                '..',
+                'deployment',
+                'scripts'
             )
         )
-        start_workers_path = os.path.join(project_dir, "start_workers.sh")
+        start_workers_path = os.path.join(scripts_dir, "start_workers.sh")
 
         cmd = [
             "/bin/bash",
@@ -326,7 +357,7 @@ poliglo.default_main(POLIGLO_SERVER_URL, META_WORKER, process, {'connection': co
         cls._setup_workers()
 
     def setUp(self):
-        self.connection = poliglo.get_connection(self.config.get('all'))
+        self.connection = poliglo.preparation.get_connection(self.config.get('all'))
         self.connection.flushall()
 
     @classmethod
@@ -335,7 +366,7 @@ poliglo.default_main(POLIGLO_SERVER_URL, META_WORKER, process, {'connection': co
         os.killpg(cls.workers_process.pid, signal.SIGTERM)
 
     def test_wait_for_all_jobs(self):
-        self.workflow_instance_id = start_workflow_instance(
+        self.workflow_instance_id = poliglo.start.start_workflow_instance(
             self.connection,
             'test_wait_jobs', 'generate_numbers', 'generate_numbers_1', 'instance1', {}
         )
@@ -350,7 +381,7 @@ poliglo.default_main(POLIGLO_SERVER_URL, META_WORKER, process, {'connection': co
         self.assertEqual(1, total_finalized)
 
     def test_last_message_are_filtered(self):
-        self.workflow_instance_id = start_workflow_instance(
+        self.workflow_instance_id = poliglo.start.start_workflow_instance(
             self.connection, 'test_wait_jobs',
             'generate_numbers', 'generate_numbers_1', 'instance1', {
                 'numbers_range': [995, 1005]

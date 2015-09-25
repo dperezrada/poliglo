@@ -88,6 +88,7 @@ angular.module('poligloMonitorApp')
                 $scope.workers.push(connections[i].data.source);
             }
             $scope.workers.push(connections[i-1].data.target);
+            $scope.workers = $.unique($scope.workers);
         };
 
         var updateStats = function(){
