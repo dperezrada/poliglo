@@ -18,7 +18,7 @@ Is a simple way to create small piece of code (worker) in some programming langu
 + Web interface to monitor what is happening
 + Supported programming languages:
     * [Python](https://github.com/dperezrada/poliglo-py "Poliglo-py")
-    * [Node](https://github.com/dperezrada/poliglo-js "Poliglo-js")
+    * [Node.js](https://github.com/dperezrada/poliglo-js "Poliglo-js")
     * More to come soon
 
 ## Limitations
