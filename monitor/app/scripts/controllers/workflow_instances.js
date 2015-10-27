@@ -26,6 +26,9 @@ angular.module('poligloMonitorApp')
         var updateWorkflowInstanceStatus = function(){
             for (var i = 0; i < $scope.workflowInstances.length; i++) {
                 $scope.workflowInstances[i].creation_time_formatted = window.moment($scope.workflowInstances[i].creation_time*1000).fromNow();
+                var status_data = $scope.workflowInstanceStatus[$scope.workflowInstances[i].id];
+                if(status_data && status_data.status === 'done')
+                    continue;
                 getStatus($scope.workflowInstances[i].id);
 
             }
@@ -42,7 +45,7 @@ angular.module('poligloMonitorApp')
                 $interval.cancel($scope.interval);
             }
         );
-        $scope.interval = $interval(updateWorkflowInstancesList, 1000);
+        $scope.interval = $interval(updateWorkflowInstancesList, 3000);
     })
     .controller('WorkflowInstanceShowCtrl', function ($scope, $stateParams, $interval, WorkflowInstance, Workflow) {
         var getConnections = function(workers, nodeId){
@@ -117,7 +120,7 @@ angular.module('poligloMonitorApp')
                 $interval.cancel($scope.interval);
             }
         );
-        $scope.interval = $interval(updateStats, 1000);
+        $scope.interval = $interval(updateStats, 3000);
 
     }).controller('WorkflowInstanceWorkerErrorsCtrl', function ($scope, $stateParams, WorkflowInstance) {
         $scope.workerId = $stateParams.workerId;

@@ -15,7 +15,8 @@ REPOSITORIES = [
     {
         'name': 'Poliglo',
         'url': 'https://github.com/dperezrada/poliglo.git',
-        'short_name': 'poliglo'
+        'short_name': 'poliglo',
+        'sub_repos': ['backend']
     }
 ]
 
@@ -73,10 +74,11 @@ def setup_supervisor_workers():
         upload_file(
             worker_dir, workers_directory, user=env.deploy_user
         )
+    poliglo_base_workers_path = os.path.join(env.deploy_path, 'poliglo/workers')
     start_workers_script_path = '%s/scripts/start_workers.sh' % env.poliglo_custom_path
     print "exec_paths_py=%s SUPERVISOR_LOG_PATH=/var/log/supervisor SUPERVISOR_FILE=/tmp/workers_file_tmp CREATE_SUPERVISOR=1 WORKERS_PATHS=%s POLIGLO_SERVER_URL=http://127.0.0.1:9015 %s" % (env.python, workers_directory, start_workers_script_path)
     sudo(
-        "exec_paths_py=%s SUPERVISOR_LOG_PATH=/var/log/supervisor SUPERVISOR_FILE=/tmp/workers_file_tmp CREATE_SUPERVISOR=1 WORKERS_PATHS=%s POLIGLO_SERVER_URL=http://127.0.0.1:9015 %s" % (env.python, workers_directory, start_workers_script_path), user=env.deploy_user
+        "exec_paths_py=%s SUPERVISOR_LOG_PATH=/var/log/supervisor SUPERVISOR_FILE=/tmp/workers_file_tmp CREATE_SUPERVISOR=1 WORKERS_PATHS=%s:%s POLIGLO_SERVER_URL=http://127.0.0.1:9015 %s" % (env.python, workers_directory, poliglo_base_workers_path, start_workers_script_path), user=env.deploy_user
     )
     sudo('mv /tmp/workers_file_tmp /etc/supervisor/conf.d/poliglo_workers.conf')
 
