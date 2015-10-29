@@ -3,13 +3,13 @@ Poliglo
 [![Build Status](https://travis-ci.org/dperezrada/poliglo.svg?branch=master)](https://travis-ci.org/dperezrada/poliglo)
 
 
-WARNING: As this is likely to change a lot in the short term, is not recommended for production yet.
+WARNING: As this is likely to change a lot in the short term, it's not recommended for production yet.
 
 ## Why poliglo?
 Today there are a lot of programming languages, and some of them are pretty good for certain tasks.
-But generally, use them together is painful, specially if you want they to talk one to another.
+But generally, using them together is painful, specially if you want them to talk to each other.
 ## What is Poliglo?
-Is a simple way to create small piece of code (worker) in some programming language and connect it with another worker maybe in another language. So you could do something like this:
+It's a simple way to create a small piece of code (worker) in some programming language, and connect it to another worker, maybe in another language. So you could do something like this:
 
     worker(js) -> worker(py) -> worker(java)
 
@@ -19,11 +19,11 @@ Is a simple way to create small piece of code (worker) in some programming langu
 + Supported programming languages:
     * [Python](https://github.com/dperezrada/poliglo-py "Poliglo-py")
     * [Node.js](https://github.com/dperezrada/poliglo-js "Poliglo-js")
-    * More to come soon
+    * More coming soon
 
 ## Limitations
-+ Not safe fail of workers, may lose some jobs if worker die.
-    * The solution is designed, but haven't implemented yet
++ Not safe fail of workers, may lose some jobs if a worker dies.
+    * The solution is designed, but haven't been implemented yet
 
 ## Install Requirements
  * Redis
@@ -43,7 +43,7 @@ Is a simple way to create small piece of code (worker) in some programming langu
 This example is located in
     examples/numbers
 
-This workflow example user 3 workers:
+This workflow example uses 3 workers:
 + create_random_number
 + find_even
 + write_numbers_to_file
@@ -61,18 +61,18 @@ This workflow example user 3 workers:
         SUPERVISOR_LOG_PATH="/tmp/poliglo_supervisor_logs" \
         deployment/scripts/start_workers.sh
 
-If there is any problem checkout the logs in $SUPERVISOR_LOG_PATH
+If there is any problem check out the logs in $SUPERVISOR_LOG_PATH
 
 #### Start a workflow instance
     python examples/start_a_workflow_instance.py
 
-And take a look to the monitor to see it running (http://localhost:9000).
-If there is any error, press over the error column number. See the error, try to fix it, restart the server and the workers, and press the retry button.
+And take a look at the monitor to see it running (http://localhost:9000).
+If there is any error, press over the error column number. See the error, try to fix it, restart the server and the workers and press the retry button.
 
-If its done cat the file to see the result:
+When it's done, cat the file to see the result:
 cat /tmp/poliglo_example_numbers.txt
 
-Did you notice that in the file there was less numbers than the initials once. Thats because the find_even worker is filtering the numbers that are not even.
+Did you notice that in the file there were less numbers than the initial ones? That's because the find_even worker is filtering the numbers that are not even.
 
 
 
