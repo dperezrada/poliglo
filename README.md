@@ -74,8 +74,12 @@ cat /tmp/poliglo_example_numbers.txt
 
 Did you notice that in the file there were less numbers than the initial ones? That's because the find_even worker is filtering the numbers that are not even.
 
+### Numbers (using Docker)
 
+Start the containers (server, monitor & worker):
 
+    docker-compose up
 
+#### Start a workflow instance
 
-
+    python examples/start_a_workflow_instance.py
