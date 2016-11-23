@@ -1,5 +1,18 @@
 #!/usr/bin/env bash
 
+parse_workers_json(){
+    curl -s "$POLIGLO_SERVER_URL/meta_workers" | ${exec_paths_py} -c 'import json,sys;workers=json.load(sys.stdin);print " ".join(workers)'
+}
+
+parse_workers_config_json(){
+    local worker="$1"
+    curl -s "$POLIGLO_SERVER_URL/meta_workers/$worker/config" | ${exec_paths_py} -c "import json,sys;config=json.load(sys.stdin);print '${CONFIG_SEPARATOR}'.join([str(key)+'=\"'+str(value)+'\"' for key, value in config.iteritems()])"
+}
+
+EXCLUDE_WORKERS=
+ONLY_WORKER=
+HELP=
+
 for i in "$@"
 do
 case $i in
@@ -97,7 +110,7 @@ serverurl = unix:///tmp/supervisor.sock
 supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 
 " > $supervisor_file
-WORKERS=`curl -s "$POLIGLO_SERVER_URL/meta_workers" | ${exec_paths_py} -c 'import json,sys;workers=json.load(sys.stdin);print " ".join(workers)'`
+WORKERS=$(parse_workers_json)
 
 for worker in $WORKERS; do
     IS_EXCLUDED=`echo "${EXCLUDE_WORKERS}"|grep "^${worker}$"`
@@ -114,11 +127,17 @@ for worker in $WORKERS; do
 
     fi
 
-    worker_config=`curl -s "$POLIGLO_SERVER_URL/meta_workers/$worker/config" | ${exec_paths_py} -c "import json,sys;config=json.load(sys.stdin);print '${CONFIG_SEPARATOR}'.join([str(key)+'=\"'+str(value)+'\"' for key, value in config.iteritems()])"`
     worker_path=`echo -e "${ALL_POSIBLE_WORKERS}" | grep "\/$worker\."|head -n 1`
     extension="${worker_path##*.}"
     exec_variable="exec_paths_$extension"
     exec_path=${!exec_variable}
+
+    if [[ -z "${extension}" ]]; then
+        echo "WARNING: Worker ${worker}.${VALID_EXTENSIONS} definition file not found, ignoring"
+        continue
+    fi
+
+    worker_config=$(parse_workers_config_json $worker)
     if [[ $ONLY_WORKER ]]; then
         RUN_COMMAND="${worker_config} bash -c '${exec_path} ${worker_path}'"
     else
