@@ -47,6 +47,7 @@ angular.module('poligloMonitorApp')
                 $interval.cancel($scope.interval);
             }
         );
+        updateWorkflowInstancesList();
         $scope.interval = $interval(updateWorkflowInstancesList, 3000);
     })
     .controller('WorkflowInstanceShowCtrl', function ($scope, $stateParams, $interval, WorkflowInstance, Workflow) {
