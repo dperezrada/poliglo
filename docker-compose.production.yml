@@ -1,38 +1,37 @@
 version: '2'
 services:
-  server:
-    build: .
+  server_prod:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
     ports:
       - 9015:9015
-    volumes:
-      - ./backend/:/src/backend
-      - ./examples:/src/examples
     environment:
       - CONFIG_PATH=/src/examples/numbers/config.docker.json
       - WORKFLOWS_PATH=/src/examples/numbers/workflows
     depends_on:
-      - redis
-  monitor:
-    build: monitor
+      - redis_prod
+  monitor_prod:
+    build:
+      context: monitor
+      dockerfile: Dockerfile.production
     volumes:
       - /src/monitor/node_modules
       - /src/monitor/bower_components
-      - ./monitor:/src/monitor
     depends_on:
-      - server
+      - server_prod
     ports:
       - 9000:9000
-  worker:
-    build: deployment
-    volumes:
-      - ./deployment:/src/deployment
-      - ./examples:/src/examples
+  worker_prod:
+    build:
+      context: deployment
+      dockerfile: Dockerfile.production
     environment:
       - POLIGLO_SERVER_URL=http://server:9015
       - WORKERS_PATHS=/src/examples/numbers/workers/
       - SUPERVISOR_LOG_PATH=/tmp/poliglo_supervisor_logs
     depends_on:
-      - server
-      - redis
-  redis:
+      - server_prod
+      - redis_prod
+  redis_prod:
     image: redis:3.2

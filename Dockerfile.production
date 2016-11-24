@@ -1,0 +1,8 @@
+FROM python:2.7
+
+ADD ./backend /src/backend/
+WORKDIR /src/backend
+RUN python setup.py install
+
+EXPOSE 9015
+CMD ["python", "poliglo_server/__init__.py"]
