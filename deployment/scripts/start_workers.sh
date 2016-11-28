@@ -53,6 +53,8 @@ fi
 VALID_EXTENSIONS="(js|py|rb)"
 
 if [[ -z "$exec_paths_py" ]]; then
+    # By default Python does not automatically flush output to STDOUT.
+    # If you want 'print' statements to work, use unbuffered mode (python -u).
     exec_paths_py="python"
 fi
 if [[ -z "$exec_paths_js" ]]; then
