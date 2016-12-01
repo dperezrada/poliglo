@@ -90,4 +90,4 @@ Start the containers (server, monitor & worker):
 
 #### Screenshot
 
-    ![Example screenshot](example_screenshot.png?raw=true)
+![Example screenshot](example_screenshot.png?raw=true)
