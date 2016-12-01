@@ -80,6 +80,14 @@ Start the containers (server, monitor & worker):
 
     docker-compose up
 
-#### Start a workflow instance
+#### Start a workflow instance (execute in HOST machine)
 
     python examples/start_a_workflow_instance.py
+
+#### Go to url
+
+    http://0.0.0.0:9000
+
+#### Screenshot
+
+    ![Example screenshot](example_screenshot.png?raw=true)
