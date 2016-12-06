@@ -56,12 +56,15 @@ if [[ -z "$exec_paths_py" ]]; then
     # By default Python does not automatically flush output to STDOUT.
     # If you want 'print' statements to work, use unbuffered mode (python -u).
     exec_paths_py="python"
+    exec_paths_runner_py="-m poliglo.runner"
 fi
 if [[ -z "$exec_paths_js" ]]; then
     exec_paths_js="node"
+    exec_paths_js_runner=""
 fi
 if [[ -z "$exec_paths_rb" ]]; then
     exec_paths_rb="ruby"
+    exec_paths_rb_runner=""
 fi
 
 ALL_POSIBLE_WORKERS=""
@@ -132,7 +135,9 @@ for worker in $WORKERS; do
     worker_path=`echo -e "${ALL_POSIBLE_WORKERS}" | grep "\/$worker\."|head -n 1`
     extension="${worker_path##*.}"
     exec_variable="exec_paths_$extension"
+    exec_variable_runner="exec_paths_runner_$extension"
     exec_path=${!exec_variable}
+    exec_runner_path=${!exec_variable_runner}
 
     if [[ -z "${extension}" ]]; then
         echo "WARNING: Worker ${worker}.${VALID_EXTENSIONS} definition file not found, ignoring"
@@ -141,7 +146,7 @@ for worker in $WORKERS; do
 
     worker_config=$(parse_workers_config_json $worker)
     if [[ $ONLY_WORKER ]]; then
-        RUN_COMMAND="${worker_config} bash -c '${exec_path} ${worker_path}'"
+        RUN_COMMAND="${worker_config} bash -c '${exec_path} ${exec_runner_path} ${worker_path}'"
     else
         user_text="";
         if [[ -n "$DEPLOY_USER" ]]; then
@@ -151,7 +156,7 @@ for worker in $WORKERS; do
             user_text="";
         fi
         echo "[program:${worker}]
-command=${exec_path} ${worker_path}
+command=${exec_path} ${exec_runner_path} ${worker_path}
 environment=${worker_config}
 ${user_text}
 " >> $supervisor_file
