@@ -12,6 +12,7 @@ parse_workers_config_json(){
 EXCLUDE_WORKERS=
 ONLY_WORKER=
 HELP=
+REDIRECT_STDOUT=
 
 for i in "$@"
 do
@@ -23,6 +24,10 @@ case $i in
     ;;
     -w=*|--worker=*)
     ONLY_WORKER="${i#*=}"
+    shift # past argument=value
+    ;;
+    -s|--stdout)
+    REDIRECT_STDOUT=1
     shift # past argument=value
     ;;
     -h|--help)
@@ -40,9 +45,20 @@ if [[ $HELP == 1 ]]; then
     echo "";
     echo "[-e=|--exclude=] = Exclude a worker from start (separete them by comma)";
     echo "[-w=|--worker=] = Start one worker";
+    echo "[-s=|--stdout] = Redirect workers' output to stdout (Python becomes unbuffered)";
     echo "[-h|--help] = Show help";
     echo "";
     exit 0;
+fi
+
+REDIRECT_TEXT=
+if [[ $REDIRECT_STDOUT == 1 ]]; then
+    # source: http://veithen.github.io/2015/01/08/supervisord-redirecting-stdout.html
+    REDIRECT_TEXT="stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+"
 fi
 
 if [[ -z "${POLIGLO_SERVER_URL}" ]]; then
@@ -57,6 +73,9 @@ if [[ -z "$exec_paths_py" ]]; then
     # If you want 'print' statements to work, use unbuffered mode (python -u).
     exec_paths_py="python"
     exec_paths_runner_py="-m poliglo.runner"
+    if [[ $REDIRECT_STDOUT == 1 ]]; then
+        exec_paths_py="$exec_paths_py -u"
+    fi
 fi
 if [[ -z "$exec_paths_js" ]]; then
     exec_paths_js="node"
@@ -155,10 +174,13 @@ for worker in $WORKERS; do
         if [[ "$DEPLOY_USER" == "test_user" ]]; then
             user_text="";
         fi
+
+
         echo "[program:${worker}]
 command=${exec_path} ${exec_runner_path} ${worker_path}
 environment=${worker_config}
 ${user_text}
+${REDIRECT_TEXT}
 " >> $supervisor_file
     fi
 done
