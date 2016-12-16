@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '0.1.4'
+version = '0.1.5'
 
 setup(
     name='poliglo-server',
@@ -20,7 +20,7 @@ setup(
     install_requires=[
         'Flask>=0.10.1',
         'flask-cors',
-        'poliglo==0.1.1',
+        'poliglo>=0.1.2',
         'tornado'
     ],
     tests_require=['nose'],
