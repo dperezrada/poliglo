@@ -135,6 +135,10 @@ supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 
 " > $supervisor_file
 WORKERS=$(parse_workers_json)
+if [[ $? -ne 0 ]]; then
+    echo "Error loading configuration json from server"
+    exit -1
+fi
 
 for worker in $WORKERS; do
     IS_EXCLUDED=`echo "${EXCLUDE_WORKERS}"|grep "^${worker}$"`
