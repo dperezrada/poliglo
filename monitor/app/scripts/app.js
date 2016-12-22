@@ -9,7 +9,7 @@
  * Main module of the application.
  */
 angular
-  .module('poligloMonitorApp', ['ui.router', 'config'])
+  .module('poligloMonitorApp', ['ui.router', 'config', 'ngFlash'])
     .config(function($stateProvider, $urlRouterProvider) {
       //
       // For any unmatched url, redirect to /state1

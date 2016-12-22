@@ -8,9 +8,12 @@
  * Controller of the poligloMonitorApp
  */
 angular.module('poligloMonitorApp')
-    .controller('WorkflowsListCtrl', function ($scope, WorkflowInstance, Workflow) {
+    .controller('WorkflowsListCtrl', function ($scope, WorkflowInstance, Workflow, Flash) {
         Workflow.list(true, function(data){
             $scope.workflowGroups = data;
+        }, function(data, status) {
+            var message = "Error connecting to Poliglo server. Status: " + status;
+            Flash.create('danger', message, 0);
         });
     })
     .controller('WorkflowInstancesListCtrl', function ($scope, $stateParams, $interval, WorkflowInstance, Workflow) {

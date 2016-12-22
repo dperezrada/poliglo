@@ -9,6 +9,7 @@
     <!-- build:css(.) styles/vendor.css -->
     <!-- bower:css -->
     <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css" />
+    <link rel="stylesheet" href="bower_components/angular-flash-alert/dist/angular-flash.css" />
     <!-- endbower -->
     <!-- endbuild -->
     <!-- build:css(.tmp) styles/main.css -->
@@ -47,7 +48,8 @@
     </div>
 
     <div class="container">
-       <div ui-view></div>
+      <flash-message show-close="true"></flash-message>
+      <div ui-view></div>
     </div>
 
     <div class="footer">
@@ -76,6 +78,7 @@
     <script src="bower_components/cytoscape/dist/cytoscape.js"></script>
     <script src="bower_components/underscore/underscore.js"></script>
     <script src="bower_components/moment/moment.js"></script>
+    <script src="bower_components/angular-flash-alert/dist/angular-flash.js"></script>
     <!-- endbower -->
     <!-- endbuild -->
 

@@ -11,13 +11,14 @@ angular.module('poligloMonitorApp')
   .service('Workflow', function ($http, ENV) {
     var baseUrl = ENV.apiEndpoint;
 
-    var list = function(byGroup, callback){
+    var list = function(byGroup, callback, error_callback){
         var url = baseUrl+'/workflows';
         if(byGroup){
             url += '?by_group=1';
         }
-        $http.get(url).
-            success(callback);
+        $http.get(url)
+            .success(callback)
+            .error(error_callback);
     };
     var listWorkflowInstances = function(workflow, callback){
         var url;
