@@ -128,12 +128,13 @@ angular.module('poligloMonitorApp')
         );
         $scope.interval = $interval(updateStats, 3000);
 
-    }).controller('WorkflowInstanceWorkerErrorsCtrl', function ($scope, $stateParams, WorkflowInstance) {
+    }).controller('WorkflowInstanceWorkerErrorsCtrl', function ($scope, $stateParams, WorkflowInstance, Flash) {
         $scope.workerId = $stateParams.workerId;
         $scope.discardError = function(index){
             WorkflowInstance.discardError(
                 $scope.workflowInstance.id, $stateParams.workerId, $scope.errors[index].redis_score,
                 function(data){
+                    Flash.create('warning', 'Task discarded');
                     updateErrors();
                 }
             );
@@ -142,6 +143,7 @@ angular.module('poligloMonitorApp')
             WorkflowInstance.retryError(
                 $scope.workflowInstance.id, $stateParams.workerId, $scope.errors[index].redis_score,
                 function(data){
+                    Flash.create('success', 'Task successfully started');
                     updateErrors();
                 }
             );
@@ -150,6 +152,7 @@ angular.module('poligloMonitorApp')
             WorkflowInstance.retryAllErrors(
                 $scope.workflowInstance.id, $stateParams.workerId,
                 function(){
+                    Flash.create('success', 'Task successfully started');
                     updateErrors();
                 }
             );
