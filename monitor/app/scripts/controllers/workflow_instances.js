@@ -162,6 +162,10 @@ angular.module('poligloMonitorApp')
             );
         };
 
+        $scope.tidyJSON = function(obj){
+            return JSON.stringify(obj, null, 2);
+        };
+
         WorkflowInstance.get($stateParams.workflowInstanceId, function(data){
             $scope.workflowInstance = data;
             updateErrors();

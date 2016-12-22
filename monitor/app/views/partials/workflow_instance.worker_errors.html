@@ -14,6 +14,8 @@
     <div class="tab-content">
 
         <div role="tabpanel" class="tab-pane" ng-class="{'active': !show_data}"><pre>{{error.workers_error[workerId].traceback}}</pre></div>
-        <div role="tabpanel" class="tab-pane" ng-class="{'active': show_data}" ><pre>{{error}}</pre></div>
+        <div role="tabpanel" class="tab-pane" ng-class="{'active': show_data}" >
+            <pre style="height: 300px;overflow: auto;word-wrap: normal;white-space: pre;">{{tidyJSON(error)}}</pre>
+        </div>
     </div>
 </div>
