@@ -29,6 +29,7 @@ angular.module('poligloMonitorApp')
         };
         var updateWorkflowInstanceStatus = function(){
             for (var i = 0; i < $scope.workflowInstances.length; i++) {
+                $scope.workflowInstances[i].creation_time_human = window.moment($scope.workflowInstances[i].creation_time*1000).format();
                 $scope.workflowInstances[i].creation_time_formatted = window.moment($scope.workflowInstances[i].creation_time*1000).fromNow();
                 var status_data = $scope.workflowInstanceStatus[$scope.workflowInstances[i].id];
                 if(status_data && status_data.status === 'done')
