@@ -54,7 +54,14 @@ angular.module('poligloMonitorApp')
         updateWorkflowInstancesList();
         $scope.interval = $interval(updateWorkflowInstancesList, 3000);
     })
-    .controller('WorkflowInstanceShowCtrl', function ($scope, $stateParams, $interval, WorkflowInstance, Workflow) {
+    .controller('WorkflowInstanceShowCtrl', function ($scope, $rootScope, $stateParams, $interval, $document, WorkflowInstance, Workflow) {
+        // graph
+        $scope.elements = [];
+        $scope.edges = [];
+        var drawGraph = function(){
+            $rootScope.$broadcast('appChanged');
+        }
+
         var getConnections = function(workers, nodeId){
             var connections = [];
             var worker = getWorker(workers, nodeId);
@@ -96,6 +103,12 @@ angular.module('poligloMonitorApp')
             var i = 0;
             for (; i < connections.length; i++) {
                 $scope.workers.push(connections[i].data.source);
+                var edge = {
+                    id: 'edge'+i,
+                    source: connections[i].data.source,
+                    target: connections[i].data.target
+                };
+                $scope.edges.push(edge);
             }
             $scope.workers.push(connections[i-1].data.target);
             $scope.workers = $.unique($scope.workers);
@@ -120,6 +133,10 @@ angular.module('poligloMonitorApp')
                 $scope.workflow = data;
                 getWorkers();
                 updateStats();
+                $scope.workers.forEach(function(worker){
+                    $scope.elements.push({id: worker});
+                });
+                drawGraph();
             });
         });
         $scope.$on('$stateChangeStart',

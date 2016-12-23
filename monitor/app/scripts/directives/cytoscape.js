@@ -5,6 +5,7 @@
  * @name poligloMonitorApp.directive:cytoscape
  * @description
  * # cytoscape
+ * based on: https://github.com/zivpug/Cytoscape-simple-directive
  */
 angular.module('poligloMonitorApp')
   .directive('cytoscape', function($rootScope) {
@@ -58,10 +59,10 @@ angular.module('poligloMonitorApp')
                     var eId = scope.cyEdges[i].id;
                     // build the edge object
                     var edgeObj = {
-                        data:{
-                        id:eId,
-                        source:eSource,
-                        target:eTarget
+                        data: {
+                            id: eId,
+                            source: eSource,
+                            target: eTarget
                         }
                     };
                     // adding the edge object to the edges array
@@ -77,7 +78,7 @@ angular.module('poligloMonitorApp')
                     var dName = scope.cyData[i].name;
                     var dType = scope.cyData[i].type;
                     // get color from the object-color dictionary
-                    var typeColor = scope.typeColors[Otype];
+                    var typeColor = scope.typeColors[dType];
                     // build the object, add or change properties as you need - just have a name and id
                     var elementObj = {
                         group:dType,'data':{
@@ -97,31 +98,36 @@ angular.module('poligloMonitorApp')
                 // http://cytoscape.github.io/cytoscape.js/
                 // here are just some basic options
                 $('#cy').cytoscape({
+                    minZoom: 0.5,
+                    maxZoom: 3,
                     layout: {
-                        name: 'circle',
+                        name: 'grid',
                         fit: true, // whether to fit the viewport to the graph
                         ready: undefined, // callback on layoutready
                         stop: undefined, // callback on layoutstop
+                        rows: 1,
                         padding: 5 // the padding on fit
                     },
                     style: cytoscape.stylesheet()
                         .selector('node')
                         .css({
-                            'shape': 'data(typeShape)',
-                            'width': '120',
-                            'height': '90',
-                            'background-color': 'data(typeColor)',
-                            'content': 'data(name)',
-                            'text-valign': 'center',
+                            // 'shape': 'data(typeShape)',
+                            'width': '50',
+                            'height': '50',
+                            'background-color': 'gray',
+                            'content': 'data(id)',
+                            'text-valign': 'top',
                             'color': 'white',
-                            'text-outline-width': 2,
-                            'text-outline-color': 'data(typeColor)'
+                            'text-outline-width': 1,
+                            // 'text-outline-color': 'data(typeColor)'
                         })
                         .selector('edge')
                         .css({
-                            'width': '10',
+                            'width': 5,
                             'target-arrow-shape': 'triangle',
-                            'source-arrow-shape': 'triangle'
+                            'line-color': 'gray',
+                            'target-arrow-color': 'gray',
+                            'curve-style': 'bezier'
                         })
                         .selector(':selected')
                         .css({
