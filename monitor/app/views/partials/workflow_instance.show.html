@@ -9,7 +9,7 @@
     <p style="margin: 0">Running time: {{workflowInstanceStats.update_time - workflowInstanceStats.start_time | number:1}} secs</p>
 </div>
 
-<h3>Workers:</h3>
+<h3>Workers</h3>
 <table class="table">
     <thead>
         <th>Name</th>
@@ -30,9 +30,19 @@
             </td>
             <td>{{workflowInstanceStats.workers[worker].total || 0}}</td>
             <td>{{workflowInstanceStats.workers[worker].done || 0}}</td>
-            <td><a href="#" ui-sref="workflowInstance.workerErrors({workflowInstanceId: workflowInstance.id, workerId: worker})">{{workflowInstanceStats.workers[worker].errors || 0}}</a></td>
+            <td>
+                <div ng-show="workflowInstanceStats.workers[worker].errors">
+                    <a href="#" ui-sref="workflowInstance.workerErrors({workflowInstanceId: workflowInstance.id, workerId: worker})">{{workflowInstanceStats.workers[worker].errors || 0}}</a>
+                </div>
+                <div ng-show="!workflowInstanceStats.workers[worker].errors">0</div>
+            </td>
             <td>{{workflowInstanceStats.workers[worker].discarded || 0}}</td>
-            <td><a href="#" ui-sref="workflowInstance.workerFinalized({workflowInstanceId: workflowInstance.id, workerId: worker})">{{workflowInstanceStats.workers[worker].finalized || 0}}</a></td>
+            <td>
+                <div ng-show="workflowInstanceStats.workers[worker].finalized">
+                    <a href="#" ui-sref="workflowInstance.workerFinalized({workflowInstanceId: workflowInstance.id, workerId: worker})">{{workflowInstanceStats.workers[worker].finalized || 0}}</a>
+                </div>
+                <div ng-show="!workflowInstanceStats.workers[worker].finalized">0</div>
+            </td>
 
         </tr>
     </tbody>
