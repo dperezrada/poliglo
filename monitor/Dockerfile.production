@@ -7,4 +7,4 @@ RUN npm install -d && npm run bower:install -- --allow-root
 ADD . /src/monitor
 
 EXPOSE 9000
-CMD ["npm", "run", "serve"]
+CMD ["npm", "run", "serve:production"]
