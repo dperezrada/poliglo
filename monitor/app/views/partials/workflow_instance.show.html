@@ -5,8 +5,8 @@
 </ol>
 <h1>{{workflowInstance.name}}</h1>
 <div style="color: #AAA;">
-    <p style="margin: 0">Started: {{workflowInstanceStats.start_time_formatted}}</p>
-    <p style="margin: 0">Running time: {{workflowInstanceStats.update_time - workflowInstanceStats.start_time | number:1}} secs</p>
+    <p style="margin: 0">Started: <span title="{{workflowInstanceStats.start_time_human}}">{{workflowInstanceStats.start_time_formatted}}</span></p>
+    <p style="margin: 0">Running time: <span title="{{workflowInstanceStats.update_time - workflowInstanceStats.start_time | number:1}} secs">{{workflowInstanceStats.update_time - workflowInstanceStats.start_time | readableTime}}</span></p>
 </div>
 
 <h3>Workers</h3>
@@ -26,7 +26,12 @@
                 <span ng-if="workflowInstanceStats.workers[worker].pending > 0" class="label label-default">Pending</span>
                 <span ng-if="workflowInstanceStats.workers[worker].errors > 0" class="label label-danger">With errors</span>
                 <br/>
-                <span style="margin-left: 20px; color: #AAA">average: {{(workflowInstanceStats.workers[worker].average_time | number:3) || '?'}} sec, total: {{(workflowInstanceStats.workers[worker].total_time | number:3) || '?'}} sec</span>
+                <div style="margin-left: 20px; color: #AAA">
+                    average:
+                    <span title="{{(workflowInstanceStats.workers[worker].average_time | number:3) || '?'}} sec">{{(workflowInstanceStats.workers[worker].average_time | readableTime) || '?'}}</span>
+                    , total:
+                    <span title="{{(workflowInstanceStats.workers[worker].total_time | number:3) || '?'}} sec">{{(workflowInstanceStats.workers[worker].total_time | readableTime) || '?'}}</span>
+                </div>
             </td>
             <td>{{workflowInstanceStats.workers[worker].total || 0}}</td>
             <td>{{workflowInstanceStats.workers[worker].done || 0}}</td>

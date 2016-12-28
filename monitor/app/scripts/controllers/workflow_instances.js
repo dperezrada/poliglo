@@ -118,11 +118,15 @@ angular.module('poligloMonitorApp')
             WorkflowInstance.stats($stateParams.workflowInstanceId, function(data){
                 $scope.workflowInstanceStats = data;
                 if($scope.workflowInstanceStats.start_time){
+                    $scope.workflowInstanceStats.start_time_human = window.moment(
+                        $scope.workflowInstanceStats.start_time*1000
+                    ).format()
                     $scope.workflowInstanceStats.start_time_formatted = window.moment(
                         $scope.workflowInstanceStats.start_time*1000
                     ).fromNow();
                 }else{
                     $scope.workflowInstanceStats.start_time_formatted = 'pending';
+                    $scope.workflowInstanceStats.start_time_human = 'pending';
                 }
             });
         };

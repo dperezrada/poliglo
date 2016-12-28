@@ -15,7 +15,7 @@
             <td title="{{workflowInstance.creation_time_human}}">{{workflowInstance.creation_time_formatted}}</td>
             <td><a ui-sref="workflowInstance.show({workflowInstanceId: workflowInstance.id})">{{workflowInstance.name}}</a></td>
             <td>{{workflowInstanceStatus[workflowInstance.id].status}}</td>
-            <td>{{workflowInstanceStatus[workflowInstance.id].runned_for |number:1}} secs</td>
+            <td title="{{workflowInstanceStatus[workflowInstance.id].runned_for |number:1}} secs">{{workflowInstanceStatus[workflowInstance.id].runned_for |readableTime}}</td>
         </tr>
     </tbody>
 </table>
