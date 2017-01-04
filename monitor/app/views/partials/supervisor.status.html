@@ -1,0 +1,20 @@
+<ol class="breadcrumb">
+    <li>Supervisor</li>
+</ol>
+<h1>Supervisor Status</h1>
+
+<table class="table">
+    <thead>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Description</th>
+    </thead>
+    <tbody>
+        <tr ng-repeat="worker in data |orderBy: 'name'">
+            <td>{{worker.name}}</td>
+            <td>{{worker.statename}}</td>
+            <td>{{worker.description}}</td>
+        </tr>
+    </tbody>
+
+</div>

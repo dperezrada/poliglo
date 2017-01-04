@@ -47,6 +47,11 @@ angular
           url: '/workflow_instances/:workflowInstanceId/workers/:workerId/finalized',
           templateUrl: 'views/partials/workflow_instance.worker_finalized.html',
           controller: 'WorkflowInstanceWorkerFinalizedCtrl'
+        })
+        .state('supervisorStatus', {
+          url: '/supervisor/status',
+          templateUrl: 'views/partials/supervisor.status.html',
+          controller: 'SupervisorStatusCtrl'
         });
 
         // .state('workers', {

@@ -133,6 +133,9 @@ serverurl = unix:///tmp/supervisor.sock
 [rpcinterface:supervisor]
 supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 
+[inet_http_server]
+port = *:9001
+
 " > $supervisor_file
 WORKERS=$(parse_workers_json)
 if [[ $? -ne 0 ]]; then
