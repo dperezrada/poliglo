@@ -4,7 +4,6 @@ import re
 import uuid
 import json
 import fnmatch
-import itertools
 import time
 from datetime import datetime
 from copy import copy
@@ -198,7 +197,6 @@ def get_workflow_instance(workflow_instance_id):
 @app.route('/workflow_instances/<workflow_instance_id>/status', methods=['GET'])
 def get_workflow_instance_status(workflow_instance_id):
     # TODO: refactor this code
-    # TODO: support discarded
     connection = get_connection(CONFIG.get('all'))
     workflow_instance_data = _get_workflow_instance(connection, workflow_instance_id)
     if not workflow_instance_data.get('start_time'):
@@ -224,12 +222,18 @@ def get_workflow_instance_status(workflow_instance_id):
         )
     )
 
+    discarded_jobs_keys = connection.keys(
+        REDIS_KEY_INSTANCE_WORKER_JOBS % (
+            workflow_instance_data.get('type'), workflow_instance_id, '*', 'removed'
+        )
+    )
+
     pipe = connection.pipeline()
     temp_union = 'temp:%s:%s' % (datetime.now().isoformat().split('T')[0], str(uuid.uuid4()))
     pipe.sunionstore(temp_union, *total_jobs_keys)
 
     temp_diff = 'temp:%s:%s' % (datetime.now().isoformat().split('T')[0], str(uuid.uuid4()))
-    pipe.sdiffstore(temp_diff, temp_union, *done_jobs_keys)
+    pipe.sdiffstore(temp_diff, temp_union, *(done_jobs_keys + discarded_jobs_keys))
     pipe.delete(temp_diff)
     pipe.delete(temp_union)
     execute_result = pipe.execute()
@@ -266,6 +270,7 @@ def get_workflow_instance_worker_jobs_type(workflow_instance_id, worker_id, opti
         json.dumps(jobs), mimetype='application/json'
     )
 
+# options: retry, discard
 @app.route('/workflow_instances/<workflow_instance_id>/workers/<worker_id>/errors/<option>/<redis_score>', methods=['GET'])
 def action_over_worker_job_type(workflow_instance_id, worker_id, option, redis_score):
     connection = get_connection(CONFIG.get('all'))
@@ -294,6 +299,10 @@ def action_over_worker_job_type(workflow_instance_id, worker_id, option, redis_s
                     time.time(),
                     raw_data
                 )
+                discarded_jobs_ids = json.loads(raw_data).get('jobs_ids', [])
+                if discarded_jobs_ids:
+                    discarded_jobs_key = REDIS_KEY_INSTANCE_WORKER_JOBS % (workflow_instance_data.get('type'), workflow_instance_id, worker_id, 'removed')
+                    connection.sadd(discarded_jobs_key, *discarded_jobs_ids)
             connection.zremrangebyscore(redis_key, redis_score, redis_score)
     else:
         abort(404, "No such error id: %s" % redis_score)
