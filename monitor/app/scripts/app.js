@@ -48,7 +48,7 @@ angular
           templateUrl: 'views/partials/workflow_instance.worker_finalized.html',
           controller: 'WorkflowInstanceWorkerFinalizedCtrl'
         })
-        .state('supervisorStatus', {
+        .state('supervisor', {
           url: '/supervisor/status',
           templateUrl: 'views/partials/supervisor.status.html',
           controller: 'SupervisorStatusCtrl'

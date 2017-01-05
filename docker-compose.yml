@@ -34,5 +34,7 @@ services:
     depends_on:
       - server
       - redis
+    ports:
+      - 9001:9001
   redis:
     image: redis:3.2

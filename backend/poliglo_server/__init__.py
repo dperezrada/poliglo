@@ -385,11 +385,24 @@ def get_workflow_instance_outputs(workflow_instance_id):
         json_loads(data).get('workers_output', {}).get(worker_id) for data in connection.zrange(target_key, 0, -1)
     ])
 
-@app.route('/supervisor')
+@app.route('/supervisor/status')
 def supervisor_status():
-    # TODO env var for 'worker'
-    server = xmlrpclib.Server('http://worker:9001/RPC2')
+    server = get_supervisor_endpoint()
     return to_json(server.supervisor.getAllProcessInfo())
+
+@app.route('/supervisor/<process_name>/start')
+def supervisor_start_process(process_name):
+    server = get_supervisor_endpoint()
+    return to_json(server.supervisor.startProcess(process_name, False))
+
+@app.route('/supervisor/<process_name>/stop')
+def supervisor_stop_process(process_name):
+    server = get_supervisor_endpoint()
+    return to_json(server.supervisor.stopProcess(process_name, False))
+
+def get_supervisor_endpoint():
+    # TODO env var for 'worker'
+    return xmlrpclib.Server('http://worker:9001/RPC2')
 
 def start_server():
     port = int(os.environ.get('POLIGLO_SERVER_PORT') or 9015)

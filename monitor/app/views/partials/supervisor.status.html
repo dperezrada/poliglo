@@ -2,19 +2,23 @@
     <li>Supervisor</li>
 </ol>
 <h1>Supervisor Status</h1>
-
+<button class="btn btn-primary" ng-click="getStatus()">Refresh</button>
 <table class="table">
     <thead>
         <th>Name</th>
         <th>Status</th>
         <th>Description</th>
+        <th>Actions</th>
     </thead>
     <tbody>
-        <tr ng-repeat="worker in data |orderBy: 'name'">
+        <tr ng-repeat="worker in data|orderBy: 'name'">
             <td>{{worker.name}}</td>
             <td>{{worker.statename}}</td>
             <td>{{worker.description}}</td>
+            <td>
+                <button class="btn btn-success" ng-show="worker.statename == 'STOPPED'" ng-click="startProcess(worker.name)">Start</button>
+                <button class="btn btn-danger" ng-show="worker.statename == 'RUNNING'" ng-click="stopProcess(worker.name)">Stop</button>
+            </td>
         </tr>
     </tbody>
-
 </div>
