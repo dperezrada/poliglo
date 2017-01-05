@@ -51,6 +51,7 @@ This workflow example uses 3 workers:
 #### Start the server
     CONFIG_PATH=./examples/numbers/config.json \
         WORKFLOWS_PATH=./examples/numbers/workflows \
+        POLIGLO_WORKER_URL=http://localhost:9001 \
         python backend/poliglo_server/__init__.py
 #### Poliglo monitor
     cd monitor && grunt serve

@@ -401,8 +401,7 @@ def supervisor_stop_process(process_name):
     return to_json(server.supervisor.stopProcess(process_name, False))
 
 def get_supervisor_endpoint():
-    # TODO env var for 'worker'
-    return xmlrpclib.Server('http://worker:9001/RPC2')
+    return xmlrpclib.Server('%s/RPC2' % os.environ.get('POLIGLO_WORKER_URL'))
 
 def start_server():
     port = int(os.environ.get('POLIGLO_SERVER_PORT') or 9015)
