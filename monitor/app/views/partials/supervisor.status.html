@@ -5,7 +5,7 @@
 <button class="btn btn-primary" ng-click="getStatus()">Refresh</button>
 <table class="table">
     <thead>
-        <th>Name</th>
+        <th>Process name</th>
         <th>Status</th>
         <th>Description</th>
         <th>Actions</th>
@@ -13,7 +13,7 @@
     <tbody>
         <tr ng-repeat="worker in data|orderBy: 'name'">
             <td>{{worker.name}}</td>
-            <td>{{worker.statename}}</td>
+            <td>{{worker.statename|lowercase}}</td>
             <td>{{worker.description}}</td>
             <td>
                 <button class="btn btn-success" ng-show="worker.statename == 'STOPPED' || worker.statename == 'FATAL'" ng-click="startProcess(worker.name)">Start</button>
