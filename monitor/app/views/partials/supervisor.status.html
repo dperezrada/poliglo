@@ -3,6 +3,14 @@
 </ol>
 <h1>Supervisor Status</h1>
 <button class="btn btn-primary" ng-click="getStatus()">Refresh</button>
+<div class="row">
+    <div class="col-md-2">Last update:</div>
+    <div class="col-md-2">{{updatedAt| date:'dd-MM-yyyy HH:mm:ss'}}</div>
+</div>
+<div class="row">
+    <div class="col-md-2">Supervisor status:</div>
+    <div class="col-md-2">{{supervisorStatus}}</div>
+</div>
 <table class="table">
     <thead>
         <th>Process name</th>
@@ -21,4 +29,6 @@
             </td>
         </tr>
     </tbody>
-</div>
+</table>
+
+<h3 class="text-center" ng-if="loading">Loading...</h3>

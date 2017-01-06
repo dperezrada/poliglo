@@ -11,9 +11,10 @@ angular.module('poligloMonitorApp')
   .service('Supervisor', function ($http, ENV) {
     var baseUrl = ENV.apiEndpoint+'/supervisor/';
 
-    var status = function(callback){
-      $http.get(baseUrl + 'status').
-        success(callback);
+    var status = function(callback, errorCallback){
+      $http.get(baseUrl + 'status')
+        .success(callback)
+        .error(errorCallback);
     };
 
     var startProcess = function(processName, callback){
