@@ -5,11 +5,12 @@ import uuid
 import json
 import fnmatch
 import time
+import socket
 import xmlrpclib
 from datetime import datetime
 from copy import copy
 
-from flask import Flask, request, abort, jsonify, Response
+from flask import Flask, request, abort, jsonify, make_response, Response
 from flask.ext.cors import CORS
 from poliglo.preparation import get_connection
 from poliglo.start import start_workflow_instance
@@ -101,7 +102,21 @@ def _workers_dict_data(key_prefix, workers_keys, workers_data):
     workers = [worker_key.split(key_prefix)[1].split(':')[0] for worker_key in workers_keys]
     return dict(zip(workers, workers_data))
 
+# ---------------
+# Error handling
+# ---------------
+@app.errorhandler(404)
+def page_not_found(e):
+    return make_response(jsonify({'error': 'Page not found'}), 404)
 
+@app.errorhandler(500)  # Doesn't work in debug mode
+@app.errorhandler(socket.gaierror)  # When supervisor is down
+def internal_server_error(e):
+    return make_response(jsonify({'error': 'Internal server error'}), 500)
+
+# -------
+# Routes
+# -------
 @app.route('/meta_workers', methods=['GET'])
 def get_workers():
     meta_workers_list = [
@@ -385,17 +400,17 @@ def get_workflow_instance_outputs(workflow_instance_id):
         json_loads(data).get('workers_output', {}).get(worker_id) for data in connection.zrange(target_key, 0, -1)
     ])
 
-@app.route('/supervisor/status')
+@app.route('/supervisor/status', methods=['GET'])
 def supervisor_status():
     server = get_supervisor_endpoint()
     return to_json(server.supervisor.getAllProcessInfo())
 
-@app.route('/supervisor/<process_name>/start')
+@app.route('/supervisor/<process_name>/start', methods=['POST'])
 def supervisor_start_process(process_name):
     server = get_supervisor_endpoint()
     return to_json(server.supervisor.startProcess(process_name, False))
 
-@app.route('/supervisor/<process_name>/stop')
+@app.route('/supervisor/<process_name>/stop', methods=['POST'])
 def supervisor_stop_process(process_name):
     server = get_supervisor_endpoint()
     return to_json(server.supervisor.stopProcess(process_name, False))

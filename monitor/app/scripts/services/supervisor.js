@@ -17,12 +17,12 @@ angular.module('poligloMonitorApp')
     };
 
     var startProcess = function(processName, callback){
-      $http.get(baseUrl + processName +'/start').
+      $http.post(baseUrl + processName +'/start').
         success(callback);
     };
 
     var stopProcess = function(processName, callback){
-      $http.get(baseUrl + processName +'/stop').
+      $http.post(baseUrl + processName +'/stop').
         success(callback);
     };
 
