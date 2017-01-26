@@ -11,6 +11,7 @@ services:
       - CONFIG_PATH=/src/examples/numbers/config.docker.json
       - WORKFLOWS_PATH=/src/examples/numbers/workflows
       - POLIGLO_WORKER_URL=http://worker:9001
+      - TEST_REDIS_HOST=redis
     depends_on:
       - redis
   monitor:

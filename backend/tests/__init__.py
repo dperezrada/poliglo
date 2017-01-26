@@ -1,6 +1,6 @@
-import os, errno
+import os
+import errno
 import unittest
-import tempfile
 
 import poliglo_server
 import poliglo
@@ -8,7 +8,7 @@ from poliglo.utils import to_json, json_loads
 
 CONFIG = {
     "all": {
-        "REDIS_HOST": "127.0.0.1",
+        "REDIS_HOST": os.environ.get("TEST_REDIS_HOST", "localhost"),
         "REDIS_PORT": 6379,
         "REDIS_DB": 1,
         "POLIGLO_SERVER_URL": "http://localhost:9015"
@@ -180,11 +180,6 @@ class TestPoligloServer(unittest.TestCase):
         workflow = json_loads(response.data)
         self.assertEqual('Script 1', workflow.get('name'))
 
-    def test_get_one_workflow(self):
-        response = self.app.get('/workflows/workflow_1')
-        workflow = json_loads(response.data)
-        self.assertEqual('Script 1', workflow.get('name'))
-
     def test_workflow_get_workflow_instance_empty(self):
         response = self.app.get('/workflows/workflow_1/workflow_instances')
         workflow_instances = json_loads(response.data)
@@ -228,10 +223,6 @@ class TestPoligloServer(unittest.TestCase):
 
     @unittest.skip("Missing implementation")
     def test_get_workflow_instance_status_errors(self):
-        pass
-
-    @unittest.skip("Missing implementation")
-    def test_get_workflow_instance_status_pending(self):
         pass
 
     @unittest.skip("Missing implementation")

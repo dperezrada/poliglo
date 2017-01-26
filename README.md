@@ -92,3 +92,9 @@ Start the containers (server, monitor & worker):
 #### Screenshot
 
 ![Example screenshot](example_screenshot.png?raw=true)
+
+## Unit tests
+
+    docker-compose exec server python setup.py test
+
+
