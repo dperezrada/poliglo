@@ -12,6 +12,7 @@ install:
   - pip install coveralls
 script:
   - coverage run --source=poliglo_server setup.py test
+  - sudo service redis-server stop
   - cd .. && ./unit_tests.sh
 after_success:
-  - coveralls
+  - cd backend && coveralls
