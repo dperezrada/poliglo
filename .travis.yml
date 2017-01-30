@@ -12,6 +12,6 @@ install:
   - pip install coveralls
 script:
   - coverage run --source=poliglo_server setup.py test
-  - ./unit_tests.sh
+  - cd .. && ./unit_tests.sh
 after_success:
   - coveralls
