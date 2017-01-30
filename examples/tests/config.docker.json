@@ -1,0 +1,8 @@
+{
+    "all": {
+        "REDIS_HOST": "redis",
+        "REDIS_PORT": 6379,
+        "REDIS_DB": 5,
+        "POLIGLO_SERVER_URL": "http://server:9015"
+    }
+}

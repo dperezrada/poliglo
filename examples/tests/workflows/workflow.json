@@ -1,0 +1,33 @@
+{
+    "id": "test_wait_jobs",
+    "name": "test_wait_jobs",
+    "start_worker_id": "generate_numbers_1",
+    "workers": {
+        "generate_numbers_1": {
+            "meta_worker": "generate_numbers",
+            "default_inputs": {
+                "numbers_range": [0, 10],
+                "sleep": 0
+            },
+            "next_workers": ["filter_1"]
+        },
+        "filter_1": {
+            "meta_worker": "filter",
+            "default_inputs": {
+                "min": 1000
+            },
+            "next_workers": ["wait_jobs_1"]
+        },
+        "wait_jobs_1": {
+            "meta_worker": "wait_jobs",
+            "default_inputs": {
+                "wait_jobs_from": ["generate_numbers_1", "filter_1", "wait_jobs_1"]
+            },
+            "next_workers": ["count_numbers_1"]
+        },
+        "count_numbers_1": {
+            "meta_worker": "count_numbers",
+            "next_workers": []
+        }
+    }
+}
