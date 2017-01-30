@@ -1,7 +1,9 @@
+sudo: required
 language: python
 python:
   - "2.7"
 services:
+  - docker
   - redis-server
 install:
   - cd backend
@@ -10,5 +12,6 @@ install:
   - pip install coveralls
 script:
   - coverage run --source=poliglo_server setup.py test
+  - ./unit_tests.sh
 after_success:
   - coveralls
