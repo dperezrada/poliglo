@@ -21,7 +21,8 @@ setup(
         'Flask>=0.10.1',
         'flask-cors',
         'poliglo>=0.1.2',
-        'tornado'
+        'tornado',
+        'voluptuous'
     ],
     tests_require=['nose'],
     test_suite="tests",

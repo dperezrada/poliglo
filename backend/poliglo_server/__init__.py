@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import sys
 import re
 import uuid
 import json
@@ -9,6 +10,7 @@ import socket
 import xmlrpclib
 from datetime import datetime
 from copy import copy
+from voluptuous import Schema, MultipleInvalid
 
 from flask import Flask, request, abort, jsonify, make_response, Response
 from flask.ext.cors import CORS
@@ -53,12 +55,31 @@ def _replace_config_variables(workflow):
 
 
 def load_workflows(path):
+    schema = Schema({
+        'id': str,
+        'name': str,
+        'start_worker_id': str,
+        'workers': {
+            str: {
+                'meta_worker': str,
+                'default_inputs': {str: str},
+                'next_workers': [int]
+            }
+        }
+    }, required=True)
+
+
     workflows = []
     if path and os.path.exists(path):
         for root, _, filenames in os.walk(path):
             for filename in fnmatch.filter(filenames, '*.json'):
                 workflow = json.load(open(os.path.join(root, filename)))
                 workflow = _replace_config_variables(workflow)
+                try:
+                    schema(workflow)
+                except MultipleInvalid as ex:
+                    sys.stderr.write("ERROR validating workflow %s\n" % filename)
+                    raise ex
                 for worker_id, worker in workflow.get('workers', {}).iteritems():
                     WORKERS_TYPES[worker_id] = worker.get('meta_worker')
                 workflows.append(workflow)
