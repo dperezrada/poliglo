@@ -10,7 +10,7 @@ import socket
 import xmlrpclib
 from datetime import datetime
 from copy import copy
-from voluptuous import Schema, MultipleInvalid
+from voluptuous import Schema, MultipleInvalid, Optional, Any
 
 from flask import Flask, request, abort, jsonify, make_response, Response
 from flask.ext.cors import CORS
@@ -56,14 +56,14 @@ def _replace_config_variables(workflow):
 
 def load_workflows(path):
     schema = Schema({
-        'id': str,
-        'name': str,
-        'start_worker_id': str,
+        'id': unicode,
+        'name': unicode,
+        'start_worker_id': unicode,
         'workers': {
-            str: {
-                'meta_worker': str,
-                'default_inputs': {str: str},
-                'next_workers': [int]
+            unicode: {
+                'meta_worker': unicode,
+                Optional('default_inputs'): {unicode: Any(unicode, list)},
+                'next_workers': [unicode]
             }
         }
     }, required=True)
