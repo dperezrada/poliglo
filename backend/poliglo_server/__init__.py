@@ -420,24 +420,24 @@ def get_workflow_instance_outputs(workflow_instance_id):
     # TODO: Manage multiple final nodes
     worker_id = _find_last_worker_id(workflow, workflow.get('start_worker_id'))[0]
     target_key = REDIS_KEY_INSTANCE_WORKER_FINALIZED_JOBS % (workflow_id, workflow_instance_id, worker_id)
-    return to_json([
+    return jsonify([
         json_loads(data).get('workers_output', {}).get(worker_id) for data in connection.zrange(target_key, 0, -1)
     ])
 
 @app.route('/supervisor/status', methods=['GET'])
 def supervisor_status():
     server = get_supervisor_endpoint()
-    return to_json(server.supervisor.getAllProcessInfo())
+    return jsonify(server.supervisor.getAllProcessInfo())
 
 @app.route('/supervisor/<process_name>/start', methods=['POST'])
 def supervisor_start_process(process_name):
     server = get_supervisor_endpoint()
-    return to_json(server.supervisor.startProcess(process_name, False))
+    return jsonify(server.supervisor.startProcess(process_name, False))
 
 @app.route('/supervisor/<process_name>/stop', methods=['POST'])
 def supervisor_stop_process(process_name):
     server = get_supervisor_endpoint()
-    return to_json(server.supervisor.stopProcess(process_name, False))
+    return jsonify(server.supervisor.stopProcess(process_name, False))
 
 def get_supervisor_endpoint():
     return xmlrpclib.Server('%s/RPC2' % os.environ.get('POLIGLO_WORKER_URL'))
