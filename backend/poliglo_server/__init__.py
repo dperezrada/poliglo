@@ -429,6 +429,15 @@ def supervisor_status():
     server = get_supervisor_endpoint()
     return jsonify(server.supervisor.getAllProcessInfo())
 
+@app.route('/workflows/<workflow_id>/supervisor/status', methods=['GET'])
+def workflow_supervisor_status(workflow_id):
+    """Show supervisor processes that are used in the workflow <workflow_id>."""
+    server = get_supervisor_endpoint()
+    workflow = _get_workflow(workflow_id)
+    target_workers = [worker['meta_worker'] for worker in workflow['workers'].values()]
+    processes = [p for p in server.supervisor.getAllProcessInfo() if p['name'] in target_workers]
+    return jsonify(processes)
+
 @app.route('/supervisor/<process_name>/start', methods=['POST'])
 def supervisor_start_process(process_name):
     server = get_supervisor_endpoint()

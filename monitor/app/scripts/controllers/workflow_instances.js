@@ -54,7 +54,22 @@ angular.module('poligloMonitorApp')
         updateWorkflowInstancesList();
         $scope.interval = $interval(updateWorkflowInstancesList, 3000);
     })
-    .controller('WorkflowInstanceShowCtrl', function ($scope, $rootScope, $stateParams, $interval, $document, WorkflowInstance, Workflow) {
+    .controller('WorkflowInstanceShowCtrl', function ($scope, $rootScope, $stateParams, $interval, $document, WorkflowInstance, Workflow, Supervisor) {
+        $scope.getSupervisorStatus = function(){
+            Workflow.supervisorStatus($scope.workflow.id, function(data){
+                $scope.supervisorStatus = data;
+            });
+        };
+        $scope.stopProcess = function(processName){
+            Supervisor.stopProcess(processName, function(data){
+                $scope.getSupervisorStatus();
+            })
+        };
+        $scope.startProcess = function(processName){
+            Supervisor.startProcess(processName, function(data){
+                $scope.getSupervisorStatus();
+            })
+        };
         // graph
         $scope.elements = [];
         $scope.edges = [];
@@ -115,6 +130,7 @@ angular.module('poligloMonitorApp')
         };
 
         var updateStats = function(){
+            $scope.getSupervisorStatus();
             WorkflowInstance.stats($stateParams.workflowInstanceId, function(data){
                 $scope.workflowInstanceStats = data;
                 if($scope.workflowInstanceStats.start_time){
