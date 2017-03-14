@@ -19,7 +19,7 @@ from poliglo.start import start_workflow_instance
 from poliglo.outputs import add_data_to_next_worker
 from poliglo.variables import REDIS_KEY_INSTANCE_WORKER_FINALIZED_JOBS, \
     REDIS_KEY_INSTANCE_WORKER_DISCARDED, REDIS_KEY_INSTANCE_WORKER_JOBS, \
-    REDIS_KEY_INSTANCE_WORKER_ERRORS
+    REDIS_KEY_INSTANCE_WORKER_ERRORS, REDIS_KEY_QUEUE_PROCESSING
 from poliglo.utils import to_json, json_loads
 
 from tornado.wsgi import WSGIContainer
@@ -369,6 +369,8 @@ def get_workflow_instance_stats(workflow_instance_id):
             pipe.zcard(key)
         workers_data[status_type] = _workers_dict_data(workers_prefix, workers_keys, pipe.execute())
 
+    running_workers = [key.split(':')[-1] for key in connection.keys(REDIS_KEY_QUEUE_PROCESSING % '*')]
+
     workers_stats = {}
     for status_type, data in workers_data.iteritems():
         for worker, worker_num in data.iteritems():
@@ -378,6 +380,7 @@ def get_workflow_instance_stats(workflow_instance_id):
                 workers_stats[worker]['total'] = worker_num
             else:
                 workers_stats[worker][status_type] = worker_num
+            workers_stats[worker]['running'] = worker in running_workers
 
     for key in connection.keys(workers_prefix+'*:timing'):
         worker = key.split(workers_prefix)[1].split(':')[0]

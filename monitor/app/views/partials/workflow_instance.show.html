@@ -23,7 +23,8 @@
         <tr ng-repeat="worker in workers">
             <td>
                 {{worker}}
-                <span ng-if="workflowInstanceStats.workers[worker].pending > 0" class="label label-default">Pending</span>
+                <span ng-if="workflowInstanceStats.workers[worker].running" class="label label-success">Running</span>
+                <span ng-if="!workflowInstanceStats.workers[worker].running && workflowInstanceStats.workers[worker].pending > 0" class="label label-default">Pending</span>
                 <span ng-if="workflowInstanceStats.workers[worker].errors > 0" class="label label-danger">With errors</span>
                 <br/>
                 <div style="margin-left: 20px; color: #AAA">
