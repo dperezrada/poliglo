@@ -20,6 +20,18 @@
         <th>Finalized</th>
     </thead>
     <tbody>
+        <tr ng-if="workflowInstanceStats.workers['unknown']">
+            <td>(unknown)</td>
+            <td>-</td>
+            <td>-</td>
+            <td>
+                <div>
+                    <a href="#" ui-sref="workflowInstance.workerErrors({workflowInstanceId: workflowInstance.id, workerId: 'unknown'})">{{workflowInstanceStats.workers['unknown'].errors || 0}}</a>
+                </div>
+            </td>
+            <td>-</td>
+            <td>-</td>
+        </tr>
         <tr ng-repeat="worker in workers">
             <td>
                 {{worker}}

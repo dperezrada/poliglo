@@ -14,6 +14,7 @@ from voluptuous import Schema, MultipleInvalid, Optional, Any
 
 from flask import Flask, request, abort, jsonify, make_response, Response
 from flask.ext.cors import CORS
+import poliglo.runner
 from poliglo.preparation import get_connection
 from poliglo.start import start_workflow_instance
 from poliglo.outputs import add_data_to_next_worker
@@ -310,6 +311,7 @@ def get_workflow_instance_worker_jobs_type(workflow_instance_id, worker_id, opti
 # options: retry, discard
 @app.route('/workflow_instances/<workflow_instance_id>/workers/<worker_id>/errors/<option>/<redis_score>', methods=['GET'])
 def action_over_worker_job_type(workflow_instance_id, worker_id, option, redis_score):
+    # TODO manage tasks with worker_id='unknown'
     connection = get_connection(CONFIG.get('all'))
     workflow_instance_data = _get_workflow_instance(connection, workflow_instance_id)
     workflow_id = workflow_instance_data.get('type')
@@ -389,8 +391,9 @@ def get_workflow_instance_stats(workflow_instance_id):
         workers_stats[worker]['average_time'] = workers_stats[worker]['total_time']/len(key_values)
 
     for worker, values in workers_stats.iteritems():
-        workers_stats[worker]['pending'] = int(values.get('total', 0)) - int(
-            values.get('done', 0)) - int(values.get('errors', 0)) - int(values.get('discarded', 0))
+        if worker != poliglo.runner.WORKER_ID_UNKNOWN:
+            workers_stats[worker]['pending'] = int(values.get('total', 0)) - int(
+                values.get('done', 0)) - int(values.get('errors', 0)) - int(values.get('discarded', 0))
     return jsonify({
         'workers': workers_stats,
         'start_time': workflow_instance_data.get('start_time'),
