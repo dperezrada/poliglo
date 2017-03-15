@@ -55,6 +55,27 @@
 </table>
 
 <h3>Processes</h3>
+<button class="btn btn-success" ng-click="supervisorStartAll()">Start all</button>
+<button class="btn btn-danger" data-toggle="modal" data-target="#stopProcessModal">Stop all</button>
+
+<div class="modal fade" id="stopProcessModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="myModalLabel">Stop workflow processes</h4>
+            </div>
+            <div class="modal-body">
+                Are you sure?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" ng-click="supervisorStopAll()" data-dismiss="modal">Stop all</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <table class="table">
     <thead>
         <th>Process name</th>

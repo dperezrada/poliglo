@@ -61,14 +61,16 @@ angular.module('poligloMonitorApp')
             });
         };
         $scope.stopProcess = function(processName){
-            Supervisor.stopProcess(processName, function(data){
-                $scope.getSupervisorStatus();
-            })
+            Supervisor.stopProcess(processName, $scope.getSupervisorStatus);
         };
         $scope.startProcess = function(processName){
-            Supervisor.startProcess(processName, function(data){
-                $scope.getSupervisorStatus();
-            })
+            Supervisor.startProcess(processName, $scope.getSupervisorStatus);
+        };
+        $scope.supervisorStopAll = function(){
+            Workflow.supervisorStop($scope.workflow.id, $scope.getSupervisorStatus);
+        };
+        $scope.supervisorStartAll = function(){
+            Workflow.supervisorStart($scope.workflow.id, $scope.getSupervisorStatus);
         };
         // graph
         $scope.elements = [];

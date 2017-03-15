@@ -438,6 +438,32 @@ def workflow_supervisor_status(workflow_id):
     processes = [p for p in server.supervisor.getAllProcessInfo() if p['name'] in target_workers]
     return jsonify(processes)
 
+@app.route('/workflows/<workflow_id>/supervisor/start', methods=['POST'])
+def workflow_supervisor_start_all(workflow_id):
+    server = get_supervisor_endpoint()
+    workflow = _get_workflow(workflow_id)
+    target_workers = [worker['meta_worker'] for worker in workflow['workers'].values()]
+    res = []
+    for worker in target_workers:
+        try:
+            res.append(server.supervisor.startProcess(worker, False))
+        except xmlrpclib.Fault:
+            pass
+    return jsonify(res)
+
+@app.route('/workflows/<workflow_id>/supervisor/stop', methods=['POST'])
+def workflow_supervisor_stop_all(workflow_id):
+    server = get_supervisor_endpoint()
+    workflow = _get_workflow(workflow_id)
+    target_workers = [worker['meta_worker'] for worker in workflow['workers'].values()]
+    res = []
+    for worker in target_workers:
+        try:
+            res.append(server.supervisor.stopProcess(worker, False))
+        except xmlrpclib.Fault:
+            pass
+    return jsonify(res)
+
 @app.route('/supervisor/<process_name>/start', methods=['POST'])
 def supervisor_start_process(process_name):
     server = get_supervisor_endpoint()
