@@ -24,7 +24,7 @@
             <td>{{worker.statename|lowercase}}</td>
             <td>{{worker.description}}</td>
             <td>
-                <button class="btn btn-success" ng-show="worker.statename == 'STOPPED' || worker.statename == 'FATAL'" ng-click="startProcess(worker.name)">Start</button>
+                <button class="btn btn-success" ng-show="['STOPPED', 'FATAL', 'EXITED'].indexOf(worker.statename) > -1" ng-click="startProcess(worker.name)">Start</button>
                 <button class="btn btn-danger" ng-show="worker.statename == 'RUNNING'" ng-click="stopProcess(worker.name)">Stop</button>
             </td>
         </tr>
