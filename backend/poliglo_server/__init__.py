@@ -194,7 +194,7 @@ def get_all_workflows():
                 groups[group] = []
             groups[group].append(workflow)
         workflows = groups
-    return Response(json.dumps(workflows), mimetype='application/json')
+    return jsonify(workflows)
 
 @app.route('/workflows/<workflow_id>', methods=['GET'])
 def get_workflow(workflow_id):
