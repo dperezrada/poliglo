@@ -60,6 +60,9 @@ angular.module('poligloMonitorApp')
                 $scope.supervisorStatus = data;
             });
         };
+        $scope.stopProcessGracefully = function(processName){
+            Supervisor.stopProcessGracefully(processName, $scope.getSupervisorStatus);
+        }
         $scope.stopProcess = function(processName){
             Supervisor.stopProcess(processName, $scope.getSupervisorStatus);
         };
@@ -68,6 +71,9 @@ angular.module('poligloMonitorApp')
         };
         $scope.supervisorStopAll = function(){
             Workflow.supervisorStop($scope.workflow.id, $scope.getSupervisorStatus);
+        };
+        $scope.supervisorStopAllGracefully = function(){
+            Workflow.supervisorStopGracefully($scope.workflow.id, $scope.getSupervisorStatus);
         };
         $scope.supervisorStartAll = function(){
             Workflow.supervisorStart($scope.workflow.id, $scope.getSupervisorStatus);

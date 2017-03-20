@@ -68,6 +68,7 @@
 
 <h3>Processes</h3>
 <button class="btn btn-success" ng-click="supervisorStartAll()">Start all</button>
+<button class="btn btn-warning" ng-click="supervisorStopAllGracefully()">Stop all gracefully</button>
 <button class="btn btn-danger" data-toggle="modal" data-target="#stopProcessModal">Stop all</button>
 
 <div class="modal fade" id="stopProcessModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel">
@@ -102,6 +103,7 @@
             <td>{{worker.description}}</td>
             <td>
                 <button class="btn btn-success" ng-show="['STOPPED', 'FATAL', 'EXITED'].indexOf(worker.statename) > -1" ng-click="startProcess(worker.name)">Start</button>
+                <button class="btn btn-warning" ng-show="worker.statename == 'RUNNING'" ng-click="stopProcessGracefully(worker.name)">Stop gracefully</button>
                 <button class="btn btn-danger" ng-show="worker.statename == 'RUNNING'" ng-click="stopProcess(worker.name)">Stop</button>
             </td>
         </tr>

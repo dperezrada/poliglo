@@ -20,7 +20,7 @@ from poliglo.start import start_workflow_instance
 from poliglo.outputs import add_data_to_next_worker
 from poliglo.variables import REDIS_KEY_INSTANCE_WORKER_FINALIZED_JOBS, \
     REDIS_KEY_INSTANCE_WORKER_DISCARDED, REDIS_KEY_INSTANCE_WORKER_JOBS, \
-    REDIS_KEY_INSTANCE_WORKER_ERRORS, REDIS_KEY_QUEUE_PROCESSING
+    REDIS_KEY_INSTANCE_WORKER_ERRORS, REDIS_KEY_QUEUE_PROCESSING, REDIS_KEY_QUEUE
 from poliglo.utils import to_json, json_loads
 
 from tornado.wsgi import WSGIContainer
@@ -467,6 +467,19 @@ def workflow_supervisor_stop_all(workflow_id):
             pass
     return jsonify(res)
 
+@app.route('/workflows/<workflow_id>/supervisor/stop_gracefully', methods=['POST'])
+def workflow_supervisor_stop_all_gracefully(workflow_id):
+    connection = get_connection(CONFIG.get('all'))
+    workflow = _get_workflow(workflow_id)
+    target_workers = [worker['meta_worker'] for worker in workflow['workers'].values()]
+    res = []
+    for worker in target_workers:
+        try:
+            res.append(connection.rpush(REDIS_KEY_QUEUE % worker, poliglo.runner.POISON_PILL))
+        except xmlrpclib.Fault:
+            pass
+    return jsonify(res)
+
 @app.route('/supervisor/<process_name>/start', methods=['POST'])
 def supervisor_start_process(process_name):
     server = get_supervisor_endpoint()
@@ -476,6 +489,11 @@ def supervisor_start_process(process_name):
 def supervisor_stop_process(process_name):
     server = get_supervisor_endpoint()
     return jsonify(server.supervisor.stopProcess(process_name, False))
+
+@app.route('/supervisor/<process_name>/stop_gracefully', methods=['POST'])
+def supervisor_stop_process_gracefully(process_name):
+    connection = get_connection(CONFIG.get('all'))
+    return jsonify(connection.rpush(REDIS_KEY_QUEUE % process_name, poliglo.runner.POISON_PILL))
 
 def get_supervisor_endpoint():
     return xmlrpclib.Server('%s/RPC2' % os.environ.get('POLIGLO_WORKER_URL'))

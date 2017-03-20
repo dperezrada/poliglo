@@ -51,6 +51,13 @@ angular.module('poligloMonitorApp')
         }
         $http.post(url).success(callback);
     }
+    var supervisorStopGracefully = function(workflow, callback){
+        var url;
+        if(workflow){
+            url = baseUrl+'/workflows/'+workflow+'/supervisor/stop_gracefully';
+        }
+        $http.post(url).success(callback);
+    }
     var get = function(workflow, callback){
         var url = baseUrl+'/workflows/'+workflow;
         $http.get(url).
@@ -64,7 +71,8 @@ angular.module('poligloMonitorApp')
       get: get,
       supervisorStatus: supervisorStatus,
       supervisorStart: supervisorStart,
-      supervisorStop: supervisorStop
+      supervisorStop: supervisorStop,
+      supervisorStopGracefully: supervisorStopGracefully,
     };
     // AngularJS will instantiate a singleton by calling "new" on this function
   });

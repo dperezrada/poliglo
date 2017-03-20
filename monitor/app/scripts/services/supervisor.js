@@ -26,10 +26,15 @@ angular.module('poligloMonitorApp')
       $http.post(baseUrl + processName +'/stop').
         success(callback);
     };
+    var stopProcessGracefully = function(processName, callback){
+      $http.post(baseUrl + processName +'/stop_gracefully').
+        success(callback);
+    };
 
     return {
       status: status,
       startProcess: startProcess,
       stopProcess: stopProcess,
+      stopProcessGracefully: stopProcessGracefully
     };
   });
