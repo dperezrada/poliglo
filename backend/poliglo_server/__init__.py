@@ -278,7 +278,11 @@ def get_workflow_instance_status(workflow_instance_id):
     pending_jobs = execute_result[1]
 
     if pending_jobs > 0:
-        status = 'running'
+        running = len(connection.keys(REDIS_KEY_QUEUE_PROCESSING_WORKER % ("*", workflow_instance_id))) > 0
+        if running:
+            status = 'running'
+        else:
+            status = 'pending'
     else:
         status = 'done'
     runned_for = ''
