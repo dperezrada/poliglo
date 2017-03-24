@@ -32,6 +32,8 @@ app = Flask(__name__)
 cors = CORS(app)
 
 WORKERS_TYPES = {}
+CONFIG = load_config(os.environ.get('CONFIG_PATH'))
+WORKFLOWS = load_workflows(os.environ.get('WORKFLOWS_PATH'))
 
 def load_config(path):
     if path and os.path.exists(path):
@@ -88,9 +90,6 @@ def load_workflows(path):
     return workflows
 
 
-CONFIG = load_config(os.environ.get('CONFIG_PATH'))
-WORKFLOWS = load_workflows(os.environ.get('WORKFLOWS_PATH'))
-
 def _get_workflow(workflow_id):
     workflow_found = [workflow for workflow in WORKFLOWS if workflow.get('id') == workflow_id]
     if len(workflow_found) == 0:
@@ -146,11 +145,7 @@ def get_workers():
         for workflow in WORKFLOWS
         for _, worker in workflow.get('workers', {}).iteritems()
     ]
-    return Response(
-        json.dumps(
-            list(set(meta_workers_list))
-        ), mimetype='application/json'
-    )
+    return jsonify(list(set(meta_workers_list)))
 
 @app.route('/meta_workers/<meta_worker>/config', methods=['GET'])
 def get_worker_config(meta_worker):
@@ -206,7 +201,7 @@ def get_workflow_workflow_instances(workflow_id):
     redis_con = get_connection(CONFIG.get('all'))
     workflow_instances = redis_con.zrange('workflows:%s:workflow_instances' % workflow_id, -25, -1)
     return_data = [json.loads(workflow_instance) for workflow_instance in workflow_instances]
-    return Response(json.dumps(return_data), mimetype='application/json')
+    return jsonify(return_data)
 
 @app.route('/workflows/<workflow_id>/workflow_instances', methods=['POST'])
 def create_workflow_workflow_instance(workflow_id):
@@ -308,9 +303,7 @@ def get_workflow_instance_worker_jobs_type(workflow_instance_id, worker_id, opti
         raw_data, score = data
         jobs[i] = json.loads(raw_data)
         jobs[i]['redis_score'] = score
-    return Response(
-        json.dumps(jobs), mimetype='application/json'
-    )
+    return jsonify(jobs)
 
 # options: retry, discard
 @app.route('/workflow_instances/<workflow_instance_id>/workers/<worker_id>/errors/<option>/<redis_score>', methods=['GET'])
