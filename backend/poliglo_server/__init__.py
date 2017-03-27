@@ -32,13 +32,14 @@ app = Flask(__name__)
 cors = CORS(app)
 
 WORKERS_TYPES = {}
-CONFIG = load_config(os.environ.get('CONFIG_PATH'))
-WORKFLOWS = load_workflows(os.environ.get('WORKFLOWS_PATH'))
+# CONFIG and WORKFLOWS defined below
 
 def load_config(path):
     if path and os.path.exists(path):
         return json.load(open(path))
     return {}
+
+CONFIG = load_config(os.environ.get('CONFIG_PATH'))
 
 def _replace_sub_on_element(re_matched, worker_id):
     config_variable = re_matched.groups()[0]
@@ -89,6 +90,7 @@ def load_workflows(path):
 
     return workflows
 
+WORKFLOWS = load_workflows(os.environ.get('WORKFLOWS_PATH'))
 
 def _get_workflow(workflow_id):
     workflow_found = [workflow for workflow in WORKFLOWS if workflow.get('id') == workflow_id]
