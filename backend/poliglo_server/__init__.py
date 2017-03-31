@@ -200,8 +200,14 @@ def get_workflow(workflow_id):
 
 @app.route('/workflows/<workflow_id>/workflow_instances', methods=['GET'])
 def get_workflow_workflow_instances(workflow_id):
+    page = int(request.args.get('page', 1))
+    instances_per_page = 25
     redis_con = get_connection(CONFIG.get('all'))
-    workflow_instances = redis_con.zrange('workflows:%s:workflow_instances' % workflow_id, -25, -1)
+    workflow_instances = redis_con.zrevrange(
+        'workflows:%s:workflow_instances' % workflow_id,
+        (page - 1) * instances_per_page,
+        page * instances_per_page - 1
+    )
     return_data = [json.loads(workflow_instance) for workflow_instance in workflow_instances]
     return jsonify(return_data)
 

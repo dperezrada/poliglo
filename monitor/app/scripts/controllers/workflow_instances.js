@@ -18,6 +18,7 @@ angular.module('poligloMonitorApp')
     })
     .controller('WorkflowInstancesListCtrl', function ($scope, $stateParams, $interval, WorkflowInstance, Workflow) {
         $scope.workflowInstanceStatus = {};
+        $scope.page = parseInt($stateParams.page);
         $scope.loading = true;
         Workflow.get($stateParams.workflow, function(data){
             $scope.workflow = data;
@@ -40,7 +41,7 @@ angular.module('poligloMonitorApp')
         };
 
         var updateWorkflowInstancesList = function(){
-            Workflow.listWorkflowInstances($stateParams.workflow, function(data){
+            Workflow.listWorkflowInstances($stateParams.workflow, $scope.page, function(data){
                 $scope.loading = false;
                 $scope.workflowInstances = data;
                 updateWorkflowInstanceStatus();

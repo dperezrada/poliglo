@@ -26,7 +26,10 @@ angular
           controller: 'WorkflowsListCtrl'
         })
         .state('workflows.listWorkflowInstances', {
-          url: '/workflows/:workflow/workflow_instances',
+          url: '/workflows/:workflow/workflow_instances?page',
+          params: {
+            page: {value: '1', squash: true}
+          },
           templateUrl: 'views/partials/workflows.list_workflow_instances.html',
           controller: 'WorkflowInstancesListCtrl'
         })

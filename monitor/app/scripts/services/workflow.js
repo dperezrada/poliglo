@@ -20,12 +20,8 @@ angular.module('poligloMonitorApp')
             .success(callback)
             .error(error_callback);
     };
-    var listWorkflowInstances = function(workflow, callback){
-        var url;
-        if(workflow){
-            url = baseUrl+'/workflows/'+workflow+'/workflow_instances';
-        }
-
+    var listWorkflowInstances = function(workflow, page, callback){
+        var url = baseUrl+'/workflows/'+workflow+'/workflow_instances?page='+page;
         $http.get(url).
             success(callback);
     };

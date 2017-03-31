@@ -3,6 +3,7 @@
     <li>{{workflow.name}}</li>
 </ol>
 <h1>{{workflow.name}}</h1>
+<p>Showing page {{page}}</p>
 <table class="table">
     <thead>
         <th>Date</th>
@@ -21,3 +22,10 @@
 </table>
 
 <h3 class="text-center" ng-if="loading">Loading...</h3>
+
+<nav aria-label="Search instances pages" ng-hide="page == 1 && workflowInstances.length == 0">
+  <ul class="pager">
+    <li ng-show="page > 1"><a ui-sref="workflows.listWorkflowInstances({workflow: workflow.id, page: page - 1})">Previous</a></li>
+    <li><a ui-sref="workflows.listWorkflowInstances({workflow: workflow.id, page: page + 1})">Next</a></li>
+  </ul>
+</nav>
