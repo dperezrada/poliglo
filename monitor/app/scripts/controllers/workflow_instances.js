@@ -28,9 +28,11 @@ angular.module('poligloMonitorApp')
             $scope.launchingInstance = true;
             Workflow.launchWorkflowInstance($stateParams.workflow, {name: $scope.newInstanceName, data: data}, function(){
                 $scope.launchingInstance = false;
+                $scope.$apply();
             }, function(data_){
                 alert(data_);
                 $scope.launchingInstance = false;
+                $scope.$apply();
             });
         }
         Workflow.get($stateParams.workflow, function(data){
