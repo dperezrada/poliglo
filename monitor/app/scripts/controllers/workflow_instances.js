@@ -20,6 +20,19 @@ angular.module('poligloMonitorApp')
         $scope.workflowInstanceStatus = {};
         $scope.page = parseInt($stateParams.page);
         $scope.loading = true;
+        $scope.newInstanceName = $stateParams.workflow;
+        $scope.newInstanceData = '{}';
+        $scope.launchingInstance = false;
+        $scope.launchInstance = function(){
+            var data = JSON.parse($scope.newInstanceData);
+            $scope.launchingInstance = true;
+            Workflow.launchWorkflowInstance($stateParams.workflow, {name: $scope.newInstanceName, data: data}, function(){
+                $scope.launchingInstance = false;
+            }, function(data_){
+                alert(data_);
+                $scope.launchingInstance = false;
+            });
+        }
         Workflow.get($stateParams.workflow, function(data){
             $scope.workflow = data;
         });
@@ -124,6 +137,11 @@ angular.module('poligloMonitorApp')
                 $scope.workflow.workers
             );
             $scope.workers = [];
+            //workflow with only one worker
+            if(connections.length == 0){
+                $scope.workers = [$scope.workflow.start_worker_id];
+                return;
+            }
             var i = 0;
             for (; i < connections.length; i++) {
                 $scope.workers.push(connections[i].data.source);

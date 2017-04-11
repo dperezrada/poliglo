@@ -13,7 +13,7 @@ from copy import copy
 from voluptuous import Schema, MultipleInvalid, Optional, Any
 
 from flask import Flask, request, abort, jsonify, make_response, Response
-from flask.ext.cors import CORS
+from flask_cors import CORS
 import poliglo.runner
 from poliglo.preparation import get_connection
 from poliglo.start import start_workflow_instance
@@ -216,6 +216,10 @@ def create_workflow_workflow_instance(workflow_id):
     redis_con = get_connection(CONFIG.get('all'))
     workflow = _get_workflow(workflow_id)
     data = request.get_json()
+    if 'name' not in data:
+        response = jsonify(error='"name" parameter is required')
+        response.status_code = 400
+        return response
     start_worker_id = workflow.get('start_worker_id')
     meta_worker = ([
         worker.get('meta_worker') for worker_id, worker in workflow.get('workers', {}).iteritems()
@@ -224,7 +228,7 @@ def create_workflow_workflow_instance(workflow_id):
     if meta_worker:
         workflow_instance_id = start_workflow_instance(
             redis_con, workflow_id, meta_worker, workflow.get('start_worker_id'),
-            data.get('name'), data.get('data', {})
+            data['name'], data.get('data', {})
         )
         return Response(json.dumps({'id': workflow_instance_id}), status=201)
     return Response(status=404)

@@ -3,6 +3,20 @@
     <li>{{workflow.name}}</li>
 </ol>
 <h1>{{workflow.name}}</h1>
+<h3>Launch</h3>
+<form>
+    <div class="form-group">
+        <label for="instance-name">Name</label>
+        <input name="instance-name" ng-model="newInstanceName"></input>
+    </div>
+    <div class="form-group">
+        <label for="data">Data</label>
+        <input name="data" ng-model="newInstanceData"></input>
+    </div>
+    <button class="btn btn-default" ng-click="launchInstance()" ng-disabled="lauchingInstance || form.$invalid">Launch instance</button>
+</form>
+
+<h3>Instances</h3>
 <p>Showing page {{page}}</p>
 <table class="table">
     <thead>

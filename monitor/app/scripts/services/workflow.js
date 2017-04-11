@@ -25,6 +25,10 @@ angular.module('poligloMonitorApp')
         $http.get(url).
             success(callback);
     };
+    var launchWorkflowInstance = function(workflow, data, callback, error_callback){
+        var url = baseUrl+'/workflows/'+workflow+'/workflow_instances';
+        $http.post(url, data).success(callback, error_callback);
+    };
     var supervisorStatus = function(workflow, callback){
         var url;
         if(workflow){
@@ -64,6 +68,7 @@ angular.module('poligloMonitorApp')
     return {
       list: list,
       listWorkflowInstances: listWorkflowInstances,
+      launchWorkflowInstance: launchWorkflowInstance,
       get: get,
       supervisorStatus: supervisorStatus,
       supervisorStart: supervisorStart,
