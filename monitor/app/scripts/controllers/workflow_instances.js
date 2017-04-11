@@ -20,14 +20,23 @@ angular.module('poligloMonitorApp')
         $scope.workflowInstanceStatus = {};
         $scope.page = parseInt($stateParams.page);
         $scope.loading = true;
-        $scope.newInstanceName = $stateParams.workflow;
         $scope.newInstanceData = '{}';
         $scope.launchingInstance = false;
+
+        var randomInt = function(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        };
+        var setRandomInstanceName = function(){
+            $scope.newInstanceName = $stateParams.workflow + ' ' + randomInt(0, 10000000);
+        };
+        setRandomInstanceName();
+
         $scope.launchInstance = function(){
             var data = JSON.parse($scope.newInstanceData);
             $scope.launchingInstance = true;
             Workflow.launchWorkflowInstance($stateParams.workflow, {name: $scope.newInstanceName, data: data}, function(){
                 $scope.launchingInstance = false;
+                setRandomInstanceName();
                 $scope.$apply();
             }, function(data_){
                 alert(data_);
