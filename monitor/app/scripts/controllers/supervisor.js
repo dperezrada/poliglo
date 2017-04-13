@@ -28,5 +28,15 @@ angular.module('poligloMonitorApp')
         $scope.getStatus();
       })
     };
+    $scope.startAll = function(){
+      Supervisor.startAllProcesses(function(data){
+        $scope.getStatus();
+      })
+    };
+    $scope.stopAllGracefully = function(){
+      Supervisor.stopAllProcessesGracefully(function(data){
+        $scope.getStatus();
+      })
+    };
     $scope.getStatus();
   });

@@ -455,13 +455,18 @@ def workflow_supervisor_start_all(workflow_id):
     server = get_supervisor_endpoint()
     workflow = _get_workflow(workflow_id)
     target_workers = [worker['meta_worker'] for worker in workflow['workers'].values()]
-    res = []
-    for worker in target_workers:
+    res = start_processes(server, target_workers)
+    return jsonify(res)
+
+def start_processes(server, processes):
+    res = {}
+    for worker in processes:
+        res[worker] = None
         try:
-            res.append(server.supervisor.startProcess(worker, False))
+            res[worker] = server.supervisor.startProcess(worker, False)
         except xmlrpclib.Fault:
             pass
-    return jsonify(res)
+    return res
 
 @app.route('/workflows/<workflow_id>/supervisor/stop', methods=['POST'])
 def workflow_supervisor_stop_all(workflow_id):
@@ -481,13 +486,7 @@ def workflow_supervisor_stop_all_gracefully(workflow_id):
     connection = get_connection(CONFIG.get('all'))
     workflow = _get_workflow(workflow_id)
     target_workers = [worker['meta_worker'] for worker in workflow['workers'].values()]
-    res = []
-    for worker in target_workers:
-        try:
-            res.append(connection.rpush(REDIS_KEY_QUEUE % worker, poliglo.runner.POISON_PILL))
-        except xmlrpclib.Fault:
-            pass
-    return jsonify(res)
+    return jsonify(stop_processes_gracefully(connection, target_workers))
 
 @app.route('/supervisor/<process_name>/start', methods=['POST'])
 def supervisor_start_process(process_name):
@@ -502,7 +501,33 @@ def supervisor_stop_process(process_name):
 @app.route('/supervisor/<process_name>/stop_gracefully', methods=['POST'])
 def supervisor_stop_process_gracefully(process_name):
     connection = get_connection(CONFIG.get('all'))
-    return jsonify(connection.rpush(REDIS_KEY_QUEUE % process_name, poliglo.runner.POISON_PILL))
+    return jsonify(stop_processes_gracefully(connection, [process_name]))
+
+@app.route('/supervisor/start_all', methods=['POST'])
+def supervisor_start_all_processes():
+    connection = get_connection(CONFIG.get('all'))
+    server = get_supervisor_endpoint()
+    processes = server.supervisor.getAllProcessInfo()
+    res = start_processes(server, [p['name'] for p in processes])
+    return jsonify(res)
+
+@app.route('/supervisor/stop_all_gracefully', methods=['POST'])
+def supervisor_stop_all_processes_gracefully():
+    connection = get_connection(CONFIG.get('all'))
+    server = get_supervisor_endpoint()
+    processes = server.supervisor.getAllProcessInfo()
+    res = stop_processes_gracefully(connection, [p['name'] for p in processes])
+    return jsonify(res)
+
+def stop_processes_gracefully(connection, processes):
+    res = {}
+    for process in processes:
+        res[process] = None
+        try:
+            res[process] = connection.rpush(REDIS_KEY_QUEUE % process, poliglo.runner.POISON_PILL)
+        except xmlrpclib.Fault:
+            pass
+    return res
 
 def get_supervisor_endpoint():
     return xmlrpclib.Server('%s/RPC2' % os.environ.get('POLIGLO_WORKER_URL'))

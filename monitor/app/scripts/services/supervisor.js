@@ -21,6 +21,10 @@ angular.module('poligloMonitorApp')
       $http.post(baseUrl + processName +'/start').
         success(callback);
     };
+    var startAllProcesses = function(callback){
+      $http.post(baseUrl + 'start_all').
+        success(callback);
+    }
 
     var stopProcess = function(processName, callback){
       $http.post(baseUrl + processName +'/stop').
@@ -30,11 +34,17 @@ angular.module('poligloMonitorApp')
       $http.post(baseUrl + processName +'/stop_gracefully').
         success(callback);
     };
+    var stopAllProcessesGracefully = function(callback){
+      $http.post(baseUrl + 'stop_all_gracefully').
+        success(callback);
+    }
 
     return {
       status: status,
       startProcess: startProcess,
+      startAllProcesses: startAllProcesses,
       stopProcess: stopProcess,
-      stopProcessGracefully: stopProcessGracefully
+      stopProcessGracefully: stopProcessGracefully,
+      stopAllProcessesGracefully: stopAllProcessesGracefully
     };
   });
