@@ -3,15 +3,15 @@
     <li>{{workflow.name}}</li>
 </ol>
 <h1>{{workflow.name}}</h1>
-<h3>Launch</h3>
-<form class="form-inline">
+<h3>Start new instance</h3>
+<form class="form-inline new-instance-form">
     <div class="form-group">
         <label for="instance-name">Name</label>
-        <input name="instance-name" ng-model="newInstanceName"></input>
+        <input type="text" class="form-control" name="instance-name" ng-model="newInstanceName"></input>
     </div>
     <div class="form-group">
         <label for="data">Data (JSON)</label>
-        <input name="data" ng-model="newInstanceData"></input>
+        <input class="form-control" name="data" ng-model="newInstanceData"></input>
     </div>
     <button class="btn btn-default" ng-click="launchInstance()" ng-disabled="launchingInstance || form.$invalid">Launch instance</button>
 </form>
