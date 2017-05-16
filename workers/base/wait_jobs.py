@@ -159,10 +159,10 @@ def main():
             else:
                 found_finalized = False
         if not found_finalized:
-            queue_message = connection.brpop([poliglo.variables.REDIS_KEY_QUEUE % meta_worker,], timeout_wait)
+            queue_message = poliglo.status.get_queue_message(connection, meta_worker, timeout_wait)
             if queue_message is not None:
                 poliglo.runner.default_main_inside(
-                    connection, worker_workflows, queue_message, process, {'connection': connection}
+                    connection, worker_workflows, queue_message, process, 'wait_jobs', {'connection': connection}
                 )
                 found_wait = True
             else:

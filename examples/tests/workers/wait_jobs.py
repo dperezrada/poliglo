@@ -94,7 +94,7 @@ def wait_is_done(connection, worker_workflows, workflow_id, workflow_instance_id
 def main():
     meta_worker = os.path.splitext(os.path.basename(__file__))[0]
     worker_workflows, connection = poliglo.preparation.prepare_worker(
-        os.environ['POLIGLO_SERVER_URL'], meta_worker
+        os.environ.get('POLIGLO_SERVER_URL'), meta_worker
     )
     workflow_waiting_workers, all_waiting_workers = get_waiting_workers(worker_workflows)
     # TODO: Move to redis
@@ -159,10 +159,10 @@ def main():
             else:
                 found_finalized = False
         if not found_finalized:
-            queue_message = connection.brpop([poliglo.variables.REDIS_KEY_QUEUE % meta_worker,], timeout_wait)
+            queue_message = poliglo.status.get_queue_message(connection, meta_worker, timeout_wait)
             if queue_message is not None:
                 poliglo.runner.default_main_inside(
-                    connection, worker_workflows, queue_message, process, {'connection': connection}
+                    connection, worker_workflows, queue_message, process, 'wait_jobs', {'connection': connection}
                 )
                 found_wait = True
             else:
